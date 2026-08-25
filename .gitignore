@@ -1,0 +1,33 @@
+# Self-reference only — not part of the shipped project
+.ref/
+PLAN.MD
+
+# Android / Gradle
+*.iml
+.gradle/
+local.properties
+.idea/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+release/
+
+# Signing — the keystore and its passwords never go in the repo.
+# keystore.properties.template is committed; the filled-in copy is not.
+keystore.properties
+keystore/
+*.jks
+*.keystore
+
+# Kotlin
+.kotlin/
+
+# OS
+.DS_Store
+Thumbs.db

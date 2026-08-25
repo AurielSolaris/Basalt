@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      Permissions, grouped by the feature that needs them.
+
+      Several of these are for machinery that does not exist yet (nothing rings
+      or vibrates in v0.1.0). They are declared now because the manifest is
+      where the app's intentions are legible, and because the runtime-grant
+      flows they imply — exact alarms and notifications especially — shape the
+      screens that request them.
+    -->
+
+    <!-- Alarms. USE_EXACT_ALARM is granted outright to apps whose core purpose
+         is alarms and timers; SCHEDULE_EXACT_ALARM is the user-revocable
+         fallback for devices that do not honour it. Basalt must degrade
+         gracefully when neither is held. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <!-- Restoring scheduled alarms after a reboot. Without this, every alarm
+         silently disappears when the phone restarts. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Firing: ring over the lockscreen, hold the CPU while doing it, and
+         post the full-screen notification that gets us there. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+    <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
+
+    <!-- Notifications. Runtime-granted from API 33; a denied grant must leave
+         alarms working, not silently broken. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Foreground services: a ringing alarm plays audio, a running timer or
+         stopwatch is user-initiated ongoing work. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
+    <!-- Reading the user's chosen ringtone from the media store. -->
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_AUDIO"
+        android:minSdkVersion="33" />
+
+    <!-- Other apps (and the assistant) set alarms and timers through us. -->
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Basalt">
+
+        <activity
+            android:name=".BasaltActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Basalt">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+              Clock-app intents. Handling these is what makes Basalt selectable
+              as *the* clock app: the assistant, the status-bar alarm chip and
+              other apps all reach a clock through them.
+
+              The actions are declared now and routed to the launcher activity;
+              honouring their extras (EXTRA_HOUR, EXTRA_LENGTH, EXTRA_SKIP_UI)
+              lands with the alarm and timer scheduling pass.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.SET_ALARM" />
+                <action android:name="android.intent.action.SET_TIMER" />
+                <action android:name="android.intent.action.SHOW_ALARMS" />
+                <action android:name="android.intent.action.SHOW_TIMERS" />
+                <action android:name="android.intent.action.DISMISS_ALARM" />
+                <action android:name="android.intent.action.SNOOZE_ALARM" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <!--
+              Live launcher icon.
+
+              Launcher3 — and the OEM launchers derived from it, which is most
+              of them — looks for this meta-data on the launcher activity. It
+              unpacks the adaptive icon's foreground layer-list, takes the
+              layers at these indices, and rotates them about the icon's centre
+              once a minute so the icon shows the real time.
+
+              The indices address @drawable/ic_launcher_foreground; keep them in
+              step with that file. DEFAULT_* declare the time the artwork is
+              drawn at: the hands are authored pointing at twelve, so all three
+              are zero and the launcher's rotation is absolute.
+
+              SECOND_LAYER_INDEX is -1 on purpose. A ticking second hand wakes
+              the launcher every second for a detail nobody reads at icon size.
+            -->
+            <meta-data
+                android:name="com.android.launcher3.HOUR_LAYER_INDEX"
+                android:value="1" />
+            <meta-data
+                android:name="com.android.launcher3.MINUTE_LAYER_INDEX"
+                android:value="2" />
+            <meta-data
+                android:name="com.android.launcher3.SECOND_LAYER_INDEX"
+                android:value="-1" />
+            <meta-data
+                android:name="com.android.launcher3.DEFAULT_HOUR"
+                android:value="0" />
+            <meta-data
+                android:name="com.android.launcher3.DEFAULT_MINUTE"
+                android:value="0" />
+            <meta-data
+                android:name="com.android.launcher3.DEFAULT_SECOND"
+                android:value="0" />
+        </activity>
+
+    </application>
+
+</manifest>

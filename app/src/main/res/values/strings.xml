@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Basalt</string>
+    <string name="tab_alarm">ALARM</string>
+    <string name="tab_clock">CLOCK</string>
+    <string name="tab_timer">TIMER</string>
+    <string name="tab_stopwatch">STOPWATCH</string>
+    <string name="tab_bedtime">BEDTIME</string>
+    <string name="tab_settings">SETTINGS</string>
+</resources>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The foreground of the adaptive launcher icon.
+
+  Layer order is load-bearing. Launcher3 locates the hands by index into
+  this layer-list, using the HOUR_LAYER_INDEX / MINUTE_LAYER_INDEX
+  meta-data declared on BasaltActivity, and rotates them about the
+  drawable's centre as the clock advances. Reordering these items silently
+  breaks the live icon — nothing will crash, the hands will just point at
+  the wrong things.
+
+    0  dial      (static)
+    1  hour hand (rotated by the launcher)
+    2  minute hand + hub (rotated by the launcher)
+
+  The second hand is not a layer here: animating it costs a launcher wake
+  every second, so SECOND_LAYER_INDEX is -1 and the drawable is kept for
+  in-app use only.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/ic_launcher_dial" />
+    <item android:drawable="@drawable/ic_launcher_hand_hour" />
+    <item android:drawable="@drawable/ic_launcher_hand_minute" />
+</layer-list>

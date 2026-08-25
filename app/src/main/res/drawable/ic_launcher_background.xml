@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The chassis behind the dial: iron oxide above, ink below. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M0,0 L108,0 L108,108 L0,108 Z"
+        android:fillColor="#0B0A09" />
+    <path
+        android:pathData="M0,0 L108,0 L108,62 L0,62 Z"
+        android:fillColor="#171310" />
+</vector>
