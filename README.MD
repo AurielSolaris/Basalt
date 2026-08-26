@@ -34,10 +34,13 @@ switch, stepper, icon and letterform is drawn from scratch on `foundation` +
 `ui`. That is a deliberate cost, taken so the app looks like one machine rather
 than a theme applied to someone else's.
 
-> **Status: v0.1.0 — structural.** Clock, Alarm and Timer are wired up and
-> working. Stopwatch, Bedtime and Settings are placeholders. Nothing is
-> persisted across process death and **no alarm rings yet** — scheduling,
-> notifications and the firing activity are the next pass. See
+> **Status: v0.1.0 — feature complete, under test.** All six sections are
+> built. Alarms schedule, survive a reboot, ring over the lockscreen, snooze
+> and dismiss. Timers and the stopwatch persist and keep running with the app
+> closed. Everything is stored in Room and DataStore.
+>
+> What is not done: automated tests, and enough overnight soak time on enough
+> devices to call the Doze story proven rather than merely implemented. See
 > [Roadmap](#roadmap).
 
 ---
@@ -46,15 +49,41 @@ than a theme applied to someone else's.
 
 | Clock | Alarm | Timer |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/clock.png" width="240" alt="Clock"> | <img src="docs/screenshots/alarm.png" width="240" alt="Alarm"> | <img src="docs/screenshots/timer.png" width="240" alt="Timer"> |
-| Live readout on the 5×7 matrix, ticking on minute boundaries | Repeat days, enable switch, time until the next alarm | Countdown that runs past zero, add-a-minute, per-timer controls |
+| <img src="assets/screenshots/clock.png" width="240" alt="Clock"> | <img src="assets/screenshots/alarm.png" width="240" alt="Alarm"> | <img src="assets/screenshots/timer.png" width="240" alt="Timer"> |
+| Live readout on the 5×7 matrix, ticking on minute boundaries | Repeat days, per-alarm sound, time until the next alarm | Countdown that runs past zero, add-a-minute, per-timer controls |
 
 | Stopwatch | Bedtime | Settings |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/stopwatch.png" width="240" alt="Stopwatch"> | <img src="docs/screenshots/bedtime.png" width="240" alt="Bedtime"> | <img src="docs/screenshots/settings.png" width="240" alt="Settings"> |
-| Not built yet | Not built yet | Not built yet |
+| <img src="assets/screenshots/stopwatch.png" width="240" alt="Stopwatch"> | <img src="assets/screenshots/bedtime.png" width="240" alt="Bedtime"> | <img src="assets/screenshots/settings.png" width="240" alt="Settings"> |
+| Brass gauge sweeping the minute, laps with split and total | The night as an arc across the 24-hour dial | Including the three system permissions alarms actually depend on |
 
 ---
+
+## Sound, and which part of it plays
+
+Most clock apps hand you a dozen stock tones, or take an MP3 and start it from
+the beginning with a fade-in. Both are the same mistake: the part of a track
+worth waking up to is almost never the first thirty seconds.
+
+Basalt lets you pick any system alarm tone or ringtone, or open any MP3 or WAV
+through the document picker — **and then choose the section that plays.** Set a
+start and an end, audition the loop, and that exact section is what rings in the
+morning.
+
+A few details that matter:
+
+- Picking a file takes a **persistable** URI permission. Without that step the
+  grant evaporates on reboot and the alarm goes silent days later, which is the
+  worst class of bug a clock app can have.
+- `MediaPlayer` can loop a whole file but not a section of one, so the section
+  is looped by hand — seek back when the position runs past the chosen end. The
+  audition uses the identical code path, so what you hear is what rings.
+- If the chosen sound will not play — file deleted, permission lost, codec
+  missing — it falls back to the device's default alarm rather than to silence.
+
+<p align="center">
+  <img src="assets/screenshots/ringtone.png" width="260" alt="Ringtone picker">
+</p>
 
 ## The icon tells the time
 
@@ -151,7 +180,8 @@ a barrier.
 :core:design         palette, BezelPanel, controls, icon set, motion curves
 :core:dotmatrix      Glyph, DotMatrixFont, DotMatrix / DotMatrixText renderers
 :core:time           TimeSource, Weekdays, duration + clock formatting
-:core:data           domain models, repository contracts, in-memory impls
+:core:data           Room, DataStore, domain models, repositories, the graph
+:core:notify         notification channels
 :feature:alarm       alarm list + editor
 :feature:clock       readout, world clock
 :feature:timer       timer bank
@@ -174,9 +204,20 @@ Some load-bearing decisions:
 - **Alarms and their occurrences are separate types.** An `Alarm` is the rule; an
   `AlarmInstance` is one firing, with its own state machine. Snoozing a Tuesday
   cannot mutate the schedule.
-- **Repositories are interfaces.** `BasaltRepositories` is the only file that
-  names an in-memory implementation. When Room lands, that file changes and
-  nothing above it does.
+- **Repositories are interfaces.** `BasaltGraph` is the only file that names a
+  concrete implementation, so the storage layer can move without anything above
+  it noticing.
+- **Nothing counts down in a process.** A running timer is a deadline plus a
+  notification, and the system owns both: `AlarmManager` wakes us at the
+  deadline, and the notification's own chronometer draws the count with no
+  process of ours alive. A foreground service ticking once a second to update a
+  number the system can draw itself is pure battery cost — and it gets killed
+  anyway.
+- **Every transition goes through one state machine.** `AlarmStateManager` is
+  the only thing that writes an occurrence's state. Snoozing has to re-arm,
+  dismissing has to schedule the *next* occurrence, being missed has to do both;
+  spreading that across a service, an activity and two receivers is how clock
+  apps end up ringing twice or never again.
 
 ---
 
@@ -243,30 +284,41 @@ Android clock?**
 
 - [x] Module structure, design system, dot-matrix renderer
 - [x] Navigation, live clock readout, launcher icon
-- [x] Alarms — create, repeat days, enable, delete
+- [x] Alarms — create, repeat days, skip next, per-alarm sound, delete
 - [x] Timers — countdown, pause/resume, add-a-minute, run past zero
-- [ ] Stopwatch and laps
-- [ ] Bedtime / sleep window
-- [ ] Settings
-- [ ] Persistence (Room + DataStore)
-- [ ] **Alarm scheduling, notifications, and firing** — the actual boss fight
-- [ ] Lifecycle: Doze, boot restore, timezone and DST changes, process death
+- [x] Stopwatch and laps
+- [x] Bedtime / sleep window
+- [x] Settings, including the system permissions alarms depend on
+- [x] Persistence — Room for alarms, occurrences, timers and laps; DataStore for
+      settings and the stopwatch
+- [x] Ringtone picker: system tones, your own MP3/WAV, and a real trim editor
+- [x] **Alarm scheduling, notifications, and firing** — `setAlarmClock`, the
+      occurrence state machine, a foreground service that rings, and a
+      full-screen alarm screen over the lockscreen
+- [x] Lifecycle — boot restore, app upgrade, timezone change, manual clock
+      change, DST, process death
+- [ ] Automated tests, and overnight soak testing on more than one device
 
 Clock apps are deceptively evil. The UI is the easy part; "wake me at 6 AM after
-Doze murdered everything" is the real work, and v0.1.0 is not finished until
-that is proven.
+Doze murdered everything" is the real work. That machinery is now built and
+verified on a real device — but *implemented* is not *proven*, and the last box
+stays unticked until it has survived a lot more nights than it has.
 
 ### v0.2.0 — Themes and personality
 
-Where it stops being "AOSP but in Kotlin".
+Where it stops being "AOSP but in Kotlin". The palette becomes a choice rather
+than a constant, and each theme is a full re-skin — metal, dot colour, grid
+density and gauge treatment all move together.
 
-- Steam Age and Early Computing as distinct, switchable themes
-- The 7×13 hero glyph set and the 3×5 micro set
-- Textures, materials, per-cell digit animation
-- Custom clock faces
+| Theme | Reads as |
+|---|---|
+| **Copper** | The default: warm brass instrumentation, as shipped in v0.1.0 |
+| **Basalt** | Cold, stony, industrial greys — the name the project actually earns |
+| **Quartz** | A real light theme: brushed silver, dark dots on a warm ground |
+| **BREM** | *Blood Red Eldritch Machinery* — red, brown and black; mechanisms built from the blood and organs of things that should not exist |
 
-> AOSP Clock: *"Here is the time."*
-> Basalt: *"Here is the time, displayed by a brass machine from an alternate 1980."*
+Plus the 7×13 hero glyph set, the 3×5 micro set, per-cell digit animation,
+textures and custom clock faces.
 
 ### v0.3.0 — Widgets
 

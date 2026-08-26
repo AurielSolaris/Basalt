@@ -1,2 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
+<!--
+  The alarm module declares its own components.
+
+  Manifest merging folds these into the app, which keeps the alarm engine's
+  moving parts next to the code that implements them rather than in a
+  distant application manifest.
+
+  Class names here are fully qualified, and must stay that way. A leading dot
+  is resolved against the *library's* own package, not the application id, so
+  ".feature.alarm.BootReceiver" in this file becomes
+  "app.auriel.basalt.feature.alarm.feature.alarm.BootReceiver" — which fails at
+  runtime with ClassNotFoundException, and only when the receiver actually
+  fires.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+
+        <!--
+          The screen an alarm brings up.
+
+          singleInstance with excludeFromRecents: a ringing alarm must never
+          stack behind itself, and it has no business appearing in the
+          recents list afterwards. showOnLockScreen and turnScreenOn are set
+          here as well as in code because the system consults the manifest
+          before the activity exists.
+        -->
+        <activity
+            android:name="app.auriel.basalt.feature.alarm.AlarmActivity"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Basalt" />
+
+        <!-- Plays the alarm. mediaPlayback, because that is what it does. -->
+        <service
+            android:name="app.auriel.basalt.feature.alarm.AlarmService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <!-- Every alarm state transition arrives here. -->
+        <receiver
+            android:name="app.auriel.basalt.feature.alarm.AlarmReceiver"
+            android:exported="false" />
+
+        <!--
+          Rebuilds the schedule when the world moves.
+
+          Pending alarms live in the system, not in the app, and each of
+          these events destroys or invalidates them. BOOT_COMPLETED is the
+          one that matters most: without it, an alarm set before a restart
+          simply never rings.
+        -->
+        <receiver
+            android:name="app.auriel.basalt.feature.alarm.BootReceiver"
+            android:exported="true"
+            android:directBootAware="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+
+</manifest>

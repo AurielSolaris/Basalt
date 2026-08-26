@@ -88,6 +88,7 @@ dependencies {
     implementation(project(":core:dotmatrix"))
     implementation(project(":core:time"))
     implementation(project(":core:data"))
+    implementation(project(":core:notify"))
     implementation(project(":feature:alarm"))
     implementation(project(":feature:clock"))
     implementation(project(":feature:timer"))

@@ -45,10 +45,24 @@
         android:name="android.permission.READ_MEDIA_AUDIO"
         android:minSdkVersion="33" />
 
+    <!-- Battery optimisation exemption.
+
+         The single most important switch for a clock app on a modern device.
+         Without it Basalt lands in a restricted App Standby bucket: alarms
+         scheduled with setAlarmClock still fire, but everything around them —
+         rescheduling the next occurrence, restoring after a reboot, keeping a
+         timer's foreground service alive — gets throttled or killed outright.
+
+         Google Play restricts this permission to apps that genuinely need it;
+         alarm clocks are on the permitted list. Settings falls back to the
+         system list, which needs no permission, if the dialog is unavailable. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <!-- Other apps (and the assistant) set alarms and timers through us. -->
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
 
     <application
+        android:name=".BasaltApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"

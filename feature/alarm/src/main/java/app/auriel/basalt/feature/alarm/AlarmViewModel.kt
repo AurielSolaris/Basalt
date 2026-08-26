@@ -1,20 +1,19 @@
 package app.auriel.basalt.feature.alarm
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.auriel.basalt.core.data.BasaltRepositories
+import app.auriel.basalt.core.data.BasaltGraph
 import app.auriel.basalt.core.data.model.Alarm
-import app.auriel.basalt.core.data.repository.AlarmRepository
-import app.auriel.basalt.core.time.SystemTimeSource
-import app.auriel.basalt.core.time.TimeSource
+import app.auriel.basalt.core.data.model.AlarmInstance
+import app.auriel.basalt.core.data.model.AlarmInstanceState
 import app.auriel.basalt.core.time.Weekdays
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -23,24 +22,39 @@ data class AlarmUiState(
     /** The time being dialled in on the setter. */
     val draft: LocalTime = LocalTime.of(7, 0),
     val alarms: List<Alarm> = emptyList(),
-    /** Time until the soonest enabled alarm, or null when none is armed. */
+    /** Scheduled and snoozed occurrences, keyed by the alarm they belong to. */
+    val instances: Map<Long, AlarmInstance> = emptyMap(),
     val nextAlarmIn: Duration? = null,
 )
 
 class AlarmViewModel(
-    private val repository: AlarmRepository = BasaltRepositories.alarms,
-    private val timeSource: TimeSource = SystemTimeSource(),
+    private val context: Context,
 ) : ViewModel() {
 
-    private val draft = MutableStateFlow(LocalTime.of(7, 0))
+    private val graph = BasaltGraph.get(context)
+    private val scheduler = AlarmScheduler(context)
+    private val draft = kotlinx.coroutines.flow.MutableStateFlow(LocalTime.of(7, 0))
 
     val state: StateFlow<AlarmUiState> =
-        combine(draft, repository.alarms) { draftTime, alarms ->
-            val sorted = alarms.sortedWith(compareBy({ it.time }, { it.id }))
+        combine(
+            draft,
+            graph.alarms.alarms,
+            graph.alarmInstances.instances,
+        ) { draftTime, alarms, instances ->
+            val byAlarm = instances
+                .filter { it.state == AlarmInstanceState.Scheduled || it.state == AlarmInstanceState.Snoozed }
+                .sortedBy { it.firesAt }
+                .associateBy { it.alarmId }
             AlarmUiState(
                 draft = draftTime,
-                alarms = sorted,
-                nextAlarmIn = soonest(sorted),
+                alarms = alarms,
+                instances = byAlarm,
+                // Read from the materialised instances rather than
+                // recomputed from the rules: the instance is what will
+                // actually ring, so it is the only honest answer.
+                nextAlarmIn = byAlarm.values.minByOrNull { it.firesAt }?.let {
+                    Duration.between(localNow(), it.firesAt).takeIf { d -> !d.isNegative }
+                },
             )
         }.stateIn(
             scope = viewModelScope,
@@ -48,74 +62,89 @@ class AlarmViewModel(
             initialValue = AlarmUiState(),
         )
 
+    init {
+        // Catch up on anything that changed while the app was not running.
+        viewModelScope.launch { scheduler.rescheduleAll() }
+    }
+
     fun adjustDraft(hours: Int = 0, minutes: Int = 0) {
-        draft.update { it.plusHours(hours.toLong()).plusMinutes(minutes.toLong()) }
+        draft.value = draft.value.plusHours(hours.toLong()).plusMinutes(minutes.toLong())
     }
 
     fun addDraftAlarm() {
         val time = draft.value
-        viewModelScope.launch { repository.upsert(Alarm(time = time)) }
-    }
-
-    fun setEnabled(alarm: Alarm, enabled: Boolean) {
-        viewModelScope.launch { repository.setEnabled(alarm.id, enabled) }
-    }
-
-    fun toggleDay(alarm: Alarm, day: java.time.DayOfWeek) {
-        viewModelScope.launch {
-            repository.upsert(alarm.copy(repeatDays = alarm.repeatDays.toggle(day)))
+        edit {
+            val id = graph.alarms.upsert(
+                Alarm(time = time, vibrate = graph.settings.get().vibrateByDefault),
+            )
+            graph.alarms.get(id)?.let { scheduler.scheduleNext(it) }
         }
     }
 
-    fun remove(alarm: Alarm) {
-        viewModelScope.launch { repository.delete(alarm.id) }
-    }
-
-    /**
-     * How far off the soonest enabled alarm is.
-     *
-     * Computed here from the rule rather than read from a materialised
-     * instance, because instances do not exist yet: the scheduler and its
-     * state machine are a later pass. When they land this becomes a read of
-     * the next [app.auriel.basalt.core.data.model.AlarmInstance] instead, and this
-     * function goes away.
-     */
-    private fun soonest(alarms: List<Alarm>): Duration? {
-        val now = LocalDateTime.ofInstant(timeSource.now(), timeSource.zone())
-        return alarms
-            .filter { it.enabled }
-            .mapNotNull { alarm -> nextOccurrence(alarm, now) }
-            .minOrNull()
-            ?.let { Duration.between(now, it) }
-    }
-
-    private fun nextOccurrence(alarm: Alarm, now: LocalDateTime): LocalDateTime? {
-        val todayAt = now.toLocalDate().atTime(alarm.time)
-        if (!alarm.repeatDays.isRepeating) {
-            return if (todayAt.isAfter(now)) todayAt else todayAt.plusDays(1)
-        }
-        // Walk forward a week; the first repeat day that is still in the
-        // future wins. Starting at today rather than tomorrow matters:
-        // an alarm repeating on today that has not yet fired is due today.
-        for (offset in 0..7) {
-            val candidate = todayAt.plusDays(offset.toLong())
-            if (candidate.dayOfWeek in alarm.repeatDays && candidate.isAfter(now)) {
-                return candidate
+    fun setEnabled(alarm: Alarm, enabled: Boolean) = edit {
+        graph.alarms.setEnabled(alarm.id, enabled)
+        if (enabled) {
+            graph.alarms.get(alarm.id)?.let { scheduler.scheduleNext(it) }
+        } else {
+            graph.alarmInstances.getForAlarm(alarm.id).forEach {
+                scheduler.cancel(it)
+                AlarmNotifications.cancelAllFor(context, it.id)
+                graph.alarmInstances.delete(it.id)
             }
         }
-        return null
     }
+
+    fun toggleDay(alarm: Alarm, day: DayOfWeek) = edit {
+        val updated = alarm.copy(repeatDays = alarm.repeatDays.toggle(day))
+        graph.alarms.upsert(updated)
+        // The rule changed, so any occurrence built from the old one is
+        // stale: drop it and materialise a fresh one.
+        graph.alarmInstances.getForAlarm(alarm.id)
+            .filter { it.state == AlarmInstanceState.Scheduled }
+            .forEach {
+                scheduler.cancel(it)
+                graph.alarmInstances.delete(it.id)
+            }
+        scheduler.scheduleNext(updated)
+    }
+
+    fun setSkipNext(alarm: Alarm, skip: Boolean) = edit {
+        graph.alarms.setSkipNext(alarm.id, skip)
+        graph.alarmInstances.getForAlarm(alarm.id)
+            .filter { it.state == AlarmInstanceState.Scheduled }
+            .forEach {
+                scheduler.cancel(it)
+                graph.alarmInstances.delete(it.id)
+            }
+        graph.alarms.get(alarm.id)?.let { scheduler.scheduleNext(it) }
+    }
+
+    fun remove(alarm: Alarm) = edit {
+        graph.alarmInstances.getForAlarm(alarm.id).forEach {
+            scheduler.cancel(it)
+            AlarmNotifications.cancelAllFor(context, it.id)
+        }
+        graph.alarmInstances.deleteForAlarm(alarm.id)
+        graph.alarms.delete(alarm.id)
+    }
+
+    private fun edit(block: suspend () -> Unit) {
+        viewModelScope.launch { block() }
+    }
+
+    private fun localNow(): LocalDateTime =
+        LocalDateTime.ofInstant(graph.timeSource.now(), graph.timeSource.zone())
 }
 
 /** Monday-first initials for the repeat row. */
 internal val WeekdayInitials = listOf(
-    java.time.DayOfWeek.MONDAY to "M",
-    java.time.DayOfWeek.TUESDAY to "T",
-    java.time.DayOfWeek.WEDNESDAY to "W",
-    java.time.DayOfWeek.THURSDAY to "T",
-    java.time.DayOfWeek.FRIDAY to "F",
-    java.time.DayOfWeek.SATURDAY to "S",
-    java.time.DayOfWeek.SUNDAY to "S",
+    DayOfWeek.MONDAY to "M",
+    DayOfWeek.TUESDAY to "T",
+    DayOfWeek.WEDNESDAY to "W",
+    DayOfWeek.THURSDAY to "T",
+    DayOfWeek.FRIDAY to "F",
+    DayOfWeek.SATURDAY to "S",
+    DayOfWeek.SUNDAY to "S",
 )
 
 internal fun Weekdays.summary(): String = when {

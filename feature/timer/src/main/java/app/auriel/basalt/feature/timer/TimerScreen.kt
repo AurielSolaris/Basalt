@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,8 +36,9 @@ import app.auriel.basalt.core.time.DurationFormat
 @Composable
 fun TimerScreen(
     modifier: Modifier = Modifier,
-    viewModel: TimerViewModel = viewModel { TimerViewModel() },
 ) {
+    val context = LocalContext.current.applicationContext
+    val viewModel: TimerViewModel = viewModel { TimerViewModel(context) }
     val colors = LocalBasaltColors.current
     val state by viewModel.state.collectAsStateWithLifecycle()
 
