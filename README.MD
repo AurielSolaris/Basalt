@@ -34,13 +34,18 @@ switch, stepper, icon and letterform is drawn from scratch on `foundation` +
 `ui`. That is a deliberate cost, taken so the app looks like one machine rather
 than a theme applied to someone else's.
 
-> **Status: v0.1.0 — feature complete, under test.** All six sections are
-> built. Alarms schedule, survive a reboot, ring over the lockscreen, snooze
-> and dismiss. Timers and the stopwatch persist and keep running with the app
-> closed. Everything is stored in Room and DataStore.
+> **Status: v0.2.0 — seven themes, and a test suite under the alarm engine.**
+> All six sections are built. Alarms schedule, survive a reboot, ring over the
+> lockscreen, snooze and dismiss. Timers and the stopwatch persist and keep
+> running with the app closed. Everything is stored in Room and DataStore, and
+> the schema is now exported and migrated rather than dropped.
 >
-> What is not done: automated tests, and enough overnight soak time on enough
-> devices to call the Doze story proven rather than merely implemented. See
+> The palette is a choice: **Basalt**, **BREM**, **Copper**, **Latte**,
+> **Mocha**, **Quartz** and **Solar**, switched from Settings and applied down
+> to the system bars.
+>
+> What is not done: enough overnight soak time on enough devices to call the
+> Doze story *proven* rather than merely implemented. See
 > [Roadmap](#roadmap).
 
 ---
@@ -50,7 +55,7 @@ than a theme applied to someone else's.
 | Clock | Alarm | Timer |
 |:---:|:---:|:---:|
 | <img src="assets/screenshots/clock.png" width="240" alt="Clock"> | <img src="assets/screenshots/alarm.png" width="240" alt="Alarm"> | <img src="assets/screenshots/timer.png" width="240" alt="Timer"> |
-| Live readout on the 5×7 matrix, ticking on minute boundaries | Repeat days, per-alarm sound, time until the next alarm | Countdown that runs past zero, add-a-minute, per-timer controls |
+| Live readout on the 5×7 matrix, with an optional seconds column | Repeat days, per-alarm sound, time until the next alarm | Countdown that runs past zero, add-a-minute, per-timer controls |
 
 | Stopwatch | Bedtime | Settings |
 |:---:|:---:|:---:|
@@ -114,14 +119,61 @@ edit rather than an hour in an illustration tool.
 
 ## Design language
 
-### Palette
+### Themes
+
+Seven palettes, chosen in **Settings → THEME**, listed alphabetically. The
+picker shows each one as a swatch drawn in its own colours, because "BREM" is
+not a colour anyone can picture from the word.
+
+| | | |
+|:---:|:---:|:---:|
+| <img src="assets/themes/basalt.png" width="200" alt="Basalt"> | <img src="assets/themes/brem.png" width="200" alt="BREM"> | <img src="assets/themes/copper.png" width="200" alt="Copper"> |
+| **Basalt** — cold grey stone and an arc lamp | **BREM** — *Blood Red Eldritch Machinery* | **Copper** — the default; oxidised copper on iron |
+
+| | | |
+|:---:|:---:|:---:|
+| <img src="assets/themes/latte.png" width="200" alt="Latte"> | <img src="assets/themes/mocha.png" width="200" alt="Mocha"> | <img src="assets/themes/quartz.png" width="200" alt="Quartz"> |
+| **Latte** — Catppuccin Latte; paper and ink | **Mocha** — Catppuccin Mocha; indigo and pastel | **Quartz** — milky stone in daylight |
+
+| |
+|:---:|
+| <img src="assets/themes/solar.png" width="200" alt="Solar"> |
+| **Solar** — Nordic slate under soft yellow |
+
+Three of them are adaptations rather than ports: **Mocha** and **Latte** take
+their values from [Catppuccin](https://github.com/catppuccin/catppuccin), and
+**Solar** keeps [Nord](https://github.com/nordtheme/nord)'s Polar Night and Snow
+Storm greys while replacing the Frost blues with a soft yellow pastel. Both are
+MIT-licensed; see [`NOTICES.MD`](NOTICES.MD) for exactly what was changed and
+why. Neither project endorses this app.
+
+A theme is eleven colours, and the token names are **roles, not hues**. Quartz's
+`ink` is a warm white and its `silverBright` is nearly black, because `ink` means
+"the ground everything sits on" and `silverBright` means "the strongest thing you
+can write on it". The one rule the drawing code has to obey is that no token may
+be assumed to be dark.
+
+Two things do not fall out of the tokens on their own and are handled explicitly:
+the **system bar icons**, which the OS draws and has to be told the polarity of,
+and the **bezel's specular edge**, which moves from the top of a panel to the
+bottom on a light ground — otherwise a raised panel reads as a recessed one.
+
+Every palette is contrast-checked in [`ThemeCatalogTest`][themetest]: text roles
+against a 4.0:1 bar, accent roles against the 3.0:1 large-text bar. Writing that
+test found four tokens under the bar, one of them in the *default* palette, where
+it had shipped in v0.1.0. A fully saturated red cannot reach 4.5:1 on black, and
+BREM is not negotiable on being red.
+
+[themetest]: core/design/src/test/java/app/auriel/basalt/core/design/ThemeCatalogTest.kt
+
+### Palette tokens (Copper)
 
 | Token | | Hex | Role |
 |---|---|---|---|
 | `ink` | ![](https://img.shields.io/badge/-000-0B0A09?style=flat-square) | `#0B0A09` | Ground, unlit substrate |
 | `ironOxide` | ![](https://img.shields.io/badge/-000-171310?style=flat-square) | `#171310` | Panel base |
 | `bronzeDeep` | ![](https://img.shields.io/badge/-000-3E2C1C?style=flat-square) | `#3E2C1C` | Bezel shadow, engraved lines |
-| `bronze` | ![](https://img.shields.io/badge/-000-7A5230?style=flat-square) | `#7A5230` | Bezel body, dividers |
+| `bronze` | ![](https://img.shields.io/badge/-000-8A5E36?style=flat-square) | `#8A5E36` | Bezel body, dividers, section headings |
 | `copper` | ![](https://img.shields.io/badge/-000-B87333?style=flat-square) | `#B87333` | Active accent, running timer |
 | `copperHot` | ![](https://img.shields.io/badge/-000-E0925A?style=flat-square) | `#E0925A` | Highlight, peak state |
 | `patina` | ![](https://img.shields.io/badge/-000-4E7A6A?style=flat-square) | `#4E7A6A` | Reserved for "elapsed / spent" |
@@ -177,7 +229,7 @@ a barrier.
 
 ```
 :app                 nav host, theme install, manifest
-:core:design         palette, BezelPanel, controls, icon set, motion curves
+:core:design         palettes + theme host, BezelPanel, controls, icons, motion
 :core:dotmatrix      Glyph, DotMatrixFont, DotMatrix / DotMatrixText renderers
 :core:time           TimeSource, Weekdays, duration + clock formatting
 :core:data           Room, DataStore, domain models, repositories, the graph
@@ -197,10 +249,15 @@ Some load-bearing decisions:
   at a call site; everything takes a `TimeSource`. Alarm scheduling, DST
   rollovers and timer expiry are untestable otherwise, and those are exactly the
   parts that have to be right.
-- **Remaining time is derived, never decremented.** A timer stores a deadline on
-  the monotonic clock, and the UI ticker exists only to trigger a redraw. A
-  dropped tick loses nothing, and a timer that ran while the screen was off is
-  correct the moment it is read again.
+- **Remaining time is derived, never decremented.** A timer stores a deadline,
+  and the UI ticker exists only to trigger a redraw. A dropped tick loses
+  nothing, and a timer that ran while the screen was off is correct the moment
+  it is read again.
+- **Anything persisted is on the wall clock, not the monotonic one.**
+  `SystemClock.elapsedRealtime()` restarts at zero on reboot, so a stored
+  monotonic deadline is meaningless exactly when it matters most. The cost is
+  that moving the system clock moves running timers with it; that is the rarer
+  and more visible failure, and it is the trade AOSP makes too.
 - **Alarms and their occurrences are separate types.** An `Alarm` is the rule; an
   `AlarmInstance` is one firing, with its own state machine. Snoozing a Tuesday
   cannot mutate the schedule.
@@ -218,6 +275,15 @@ Some load-bearing decisions:
   dismissing has to schedule the *next* occurrence, being missed has to do both;
   spreading that across a service, an activity and two receivers is how clock
   apps end up ringing twice or never again.
+- **The decisions are separated from the effects.** `AlarmStateManager` and
+  `AlarmScheduler` are unavoidably bound to a `Context`. What they *decide* is
+  not: `AlarmTransitions` is pure, so "what happens to a repeating alarm once
+  this morning is over" can be tested without a device — which is also the part
+  that is entangled enough to get wrong.
+- **Room's destructive fallback is gone.** The schema is exported and
+  committed, and a change with no matching migration now throws on open instead
+  of quietly deleting the user's alarms. A crash is a bug report; a wiped alarm
+  list is a missed morning nobody can explain.
 
 ---
 
@@ -235,6 +301,27 @@ echo "sdk.dir=C:/path/to/Android/Sdk" > local.properties   # forward slashes
 > `sdk.dir` must use forward slashes or escaped backslashes. A Windows path with
 > single backslashes is silently mangled by the Java properties parser and
 > surfaces as an unrelated-looking IO error.
+
+### Tests
+
+```bash
+./gradlew test
+```
+
+137 JVM unit tests, no device or emulator required. They cover the parts where
+being wrong is invisible until a morning goes wrong:
+
+| Module | What is under test |
+|---|---|
+| `:core:time` | Next-occurrence walking, the repeat mask, both duration formats, 12/24-hour formatting, and daylight saving in both directions |
+| `:core:data` | Timer and stopwatch arithmetic across pauses and process gaps, the sleep window's midnight wrap |
+| `:core:dotmatrix` | The ASCII-picture-to-bitmask fold, and layout measurement agreeing with what the renderer walks |
+| `:core:design` | Every palette's contrast, per role; id stability and fallback |
+| `:feature:alarm` | The lifecycle decisions — skip-next, one-shot disable, snooze rounding, request-code collisions |
+
+What is deliberately *not* here: anything needing Robolectric or a device. The
+Android-bound classes are effects over the tested decisions, and testing them
+would mean testing `AlarmManager`.
 
 ### Release builds
 
@@ -277,7 +364,7 @@ python tools/generate_icon.py
 
 ## Roadmap
 
-### v0.1.0 — AOSP recreation *(in progress)*
+### v0.1.0 — AOSP recreation *(done)*
 
 Not trying to be special yet. The question is only: **can this be a reliable
 Android clock?**
@@ -297,28 +384,34 @@ Android clock?**
       full-screen alarm screen over the lockscreen
 - [x] Lifecycle — boot restore, app upgrade, timezone change, manual clock
       change, DST, process death
-- [ ] Automated tests, and overnight soak testing on more than one device
+- [x] Automated tests — 137 of them, over the schedule arithmetic, the repeat
+      mask, both formatters, the domain models, the glyph fold, and the alarm
+      lifecycle decisions
+- [x] Room schema exported and migrated, rather than dropped on change
+- [ ] Overnight soak testing on more than one device
 
 Clock apps are deceptively evil. The UI is the easy part; "wake me at 6 AM after
-Doze murdered everything" is the real work. That machinery is now built and
+Doze murdered everything" is the real work. That machinery is built, tested and
 verified on a real device — but *implemented* is not *proven*, and the last box
 stays unticked until it has survived a lot more nights than it has.
 
-### v0.2.0 — Themes and personality
+### v0.2.0 — Themes and personality *(done)*
 
-Where it stops being "AOSP but in Kotlin". The palette becomes a choice rather
-than a constant, and each theme is a full re-skin — metal, dot colour, grid
-density and gauge treatment all move together.
+Where it stops being "AOSP but in Kotlin". The palette is a choice rather than a
+constant — see [Themes](#themes) for what each one reads as.
 
-| Theme | Reads as |
-|---|---|
-| **Copper** | The default: warm brass instrumentation, as shipped in v0.1.0 |
-| **Basalt** | Cold, stony, industrial greys — the name the project actually earns |
-| **Quartz** | A real light theme: brushed silver, dark dots on a warm ground |
-| **BREM** | *Blood Red Eldritch Machinery* — red, brown and black; mechanisms built from the blood and organs of things that should not exist |
+- [x] Seven palettes: Basalt, BREM, Copper, Latte, Mocha, Quartz and Solar
+- [x] A picker that shows each theme as a swatch in its own colours
+- [x] Quartz as a genuine light theme, with the bezel's specular edge and the
+      system bar icons flipping to match
+- [x] The choice persisted, and mirrored synchronously so the alarm screen and
+      the window background never spend a frame in the wrong palette
+- [x] Contrast bars enforced by test, per role, for every palette
+- [x] The seconds and 24-hour toggles actually reaching the readout, which in
+      v0.1.0 they did not
 
-Plus the 7×13 hero glyph set, the 3×5 micro set, per-cell digit animation,
-textures and custom clock faces.
+Still to come under this heading: the 7×13 hero glyph set, the 3×5 micro set,
+per-cell digit animation, textures and custom clock faces.
 
 ### v0.3.0 — Widgets
 

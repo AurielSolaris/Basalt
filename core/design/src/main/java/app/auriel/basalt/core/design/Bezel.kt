@@ -17,6 +17,11 @@ import androidx.compose.ui.unit.dp
  * Depth comes from two hairlines — a bright specular edge along the top and
  * a dark edge along the bottom — rather than from a blurred drop shadow.
  * Blur reads as glass; Basalt is milled brass.
+ *
+ * On a light ground the two swap ends. "Bright on top" is not the rule; the
+ * rule is that the lit edge faces the light, and on Quartz the ground is
+ * already brighter than any highlight, so the panel only reads as raised if
+ * the shadow is the one on top.
  */
 @Composable
 fun BezelPanel(
@@ -33,14 +38,18 @@ fun BezelPanel(
             )
             .drawBehind {
                 val hairline = 1.dp.toPx()
+                val specular = colors.silverBright.copy(alpha = 0.16f)
+                val shadow = colors.bronzeDeep
+                val top = if (colors.isLight) shadow else specular
+                val bottom = if (colors.isLight) specular else shadow
                 drawLine(
-                    color = colors.silverBright.copy(alpha = 0.16f),
+                    color = top,
                     start = Offset(0f, hairline / 2f),
                     end = Offset(size.width, hairline / 2f),
                     strokeWidth = hairline,
                 )
                 drawLine(
-                    color = colors.bronzeDeep,
+                    color = bottom,
                     start = Offset(0f, size.height - hairline / 2f),
                     end = Offset(size.width, size.height - hairline / 2f),
                     strokeWidth = hairline,

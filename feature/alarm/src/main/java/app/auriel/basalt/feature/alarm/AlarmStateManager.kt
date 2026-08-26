@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import app.auriel.basalt.core.data.BasaltGraph
+import app.auriel.basalt.core.data.model.Alarm
 import app.auriel.basalt.core.data.model.AlarmInstance
 import app.auriel.basalt.core.data.model.AlarmInstanceState
 import java.time.LocalDateTime
@@ -51,7 +52,7 @@ object AlarmStateManager {
 
         val now = LocalDateTime.ofInstant(graph.timeSource.now(), graph.timeSource.zone())
         val snoozed = instance.copy(
-            firesAt = now.plusMinutes(minutes.toLong()).withSecond(0).withNano(0),
+            firesAt = AlarmTransitions.snoozeAt(now, minutes),
             state = AlarmInstanceState.Snoozed,
         )
         graph.alarmInstances.update(snoozed)
@@ -107,11 +108,7 @@ object AlarmStateManager {
         scheduler.cancel(instance)
         graph.alarmInstances.delete(instanceId)
 
-        if (alarm.repeatDays.isRepeating) {
-            scheduler.scheduleNext(alarm, instance.firesAt)
-        } else {
-            graph.alarms.setEnabled(alarm.id, false)
-        }
+        applyNext(context, alarm, instance.firesAt)
     }
 
     /**
@@ -123,12 +120,28 @@ object AlarmStateManager {
      * itself off, which is the whole of what "one-shot" means.
      */
     private suspend fun finishOccurrence(context: Context, instance: AlarmInstance) {
-        val graph = BasaltGraph.get(context)
-        val alarm = graph.alarms.get(instance.alarmId) ?: return
-        if (alarm.repeatDays.isRepeating) {
-            AlarmScheduler(context).scheduleNext(alarm, instance.firesAt)
-        } else {
-            graph.alarms.setEnabled(alarm.id, false)
+        val alarm = BasaltGraph.get(context).alarms.get(instance.alarmId) ?: return
+        applyNext(context, alarm, instance.firesAt)
+    }
+
+    /**
+     * Carries out whatever [AlarmTransitions.afterOccurrence] decided.
+     *
+     * Split out so dismissing, being missed and skipping all go through one
+     * path: they differ in what the user is told, not in what the schedule
+     * should look like afterwards.
+     */
+    private suspend fun applyNext(
+        context: Context,
+        alarm: Alarm,
+        occurrenceFiresAt: LocalDateTime,
+    ) {
+        when (val next = AlarmTransitions.afterOccurrence(alarm, occurrenceFiresAt)) {
+            is AlarmTransitions.Next.ScheduleFrom ->
+                AlarmScheduler(context).scheduleNext(alarm, next.from)
+
+            AlarmTransitions.Next.DisableAlarm ->
+                BasaltGraph.get(context).alarms.setEnabled(alarm.id, false)
         }
     }
 

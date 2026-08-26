@@ -11,6 +11,16 @@ import java.time.LocalTime
  * changes, not six times.
  */
 data class Settings(
+    /**
+     * Which palette is installed, by its stable id.
+     *
+     * A string rather than the enum itself, because this module knows
+     * nothing about :core:design and should not have to. The id is the
+     * contract between the two; resolving it is the design module's job,
+     * and an id it does not recognise falls back rather than failing.
+     */
+    val themeId: String = "copper",
+
     val use24Hour: Boolean = true,
     val weekStart: DayOfWeek = DayOfWeek.MONDAY,
     val homeZoneId: String? = null,

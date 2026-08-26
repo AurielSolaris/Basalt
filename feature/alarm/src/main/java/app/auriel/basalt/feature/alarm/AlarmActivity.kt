@@ -26,7 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import app.auriel.basalt.core.data.BasaltGraph
 import app.auriel.basalt.core.design.BasaltButton
-import app.auriel.basalt.core.design.BasaltTheme
+import app.auriel.basalt.core.design.BasaltThemeHost
 import app.auriel.basalt.core.design.LocalBasaltColors
 import app.auriel.basalt.core.dotmatrix.DotMatrixText
 import app.auriel.basalt.core.dotmatrix.DotShape
@@ -49,8 +49,15 @@ class AlarmActivity : ComponentActivity() {
         instanceId = intent.getLongExtra(EXTRA_INSTANCE_ID, -1L)
         showOverLockscreen()
 
+        val graph = BasaltGraph.get(this)
         setContent {
-            BasaltTheme {
+            // The alarm screen is put in front of someone who is asleep, so
+            // it starts from the synchronously-cached theme id rather than
+            // spending a frame in the default palette.
+            BasaltThemeHost(
+                themeIdFlow = graph.themeIds,
+                initialThemeId = graph.cachedThemeId,
+            ) {
                 AlarmScreenContent(
                     instanceId = instanceId,
                     onSnooze = {

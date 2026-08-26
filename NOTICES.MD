@@ -98,6 +98,36 @@ Licensed under the Apache License 2.0.
 Gradle (Apache 2.0) and the Android Gradle Plugin (Apache 2.0) are build-time
 tools and are not distributed as part of the application.
 
+## Colour schemes
+
+Three of Basalt's themes take their colour values from existing, separately
+authored palettes. No code is used from either project — only the published
+hex values, re-mapped onto Basalt's own eleven roles.
+
+| Basalt theme | Derived from | Copyright | Licence |
+|---|---|---|---|
+| **Mocha** | [Catppuccin](https://github.com/catppuccin/catppuccin) — Mocha flavour | Copyright (c) 2021 Catppuccin | MIT |
+| **Latte** | [Catppuccin](https://github.com/catppuccin/catppuccin) — Latte flavour | Copyright (c) 2021 Catppuccin | MIT |
+| **Solar** | [Nord](https://github.com/nordtheme/nord) — Polar Night and Snow Storm | Copyright (c) 2016-present Sven Greb | MIT |
+
+These are **adaptations, not ports**, and should not be taken as
+reference-accurate renditions of either scheme:
+
+- Catppuccin and Nord are *named-colour sets* (`base`, `surface0`, `peach`,
+  `nord3`); Basalt is a *role set* (`ink`, `ironOxide`, `copper`, `pewter`).
+  Assigning one to the other is an interpretation, and a different one would
+  be equally defensible.
+- Several values are darkened or lightened from what those projects ship, to
+  clear the contrast bars enforced in
+  [`ThemeCatalogTest`](core/design/src/test/java/app/auriel/basalt/core/design/ThemeCatalogTest.kt).
+  Latte's accents in particular are tuned to sit beside its base rather than
+  to be read on it, and Basalt puts the accent colour into digits.
+- **Solar deliberately departs from Nord.** It keeps the Polar Night and Snow
+  Storm greys and replaces the Frost blues with a soft yellow pastel accent.
+  It is a Nord-derived chassis, not Nord.
+
+Neither project endorses this app.
+
 ## Icon generation
 
 [`tools/generate_icon.py`](tools/generate_icon.py) is original work. It uses

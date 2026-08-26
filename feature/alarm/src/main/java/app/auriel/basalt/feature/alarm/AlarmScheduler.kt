@@ -82,23 +82,13 @@ class AlarmScheduler(private val context: Context) {
     suspend fun scheduleNext(alarm: Alarm, from: LocalDateTime = localNow()) {
         if (!alarm.enabled) return
 
-        var firesAt = AlarmSchedule.nextOccurrence(alarm.time, alarm.repeatDays, from)
-
-        if (alarm.skipNext) {
-            if (alarm.repeatDays.isRepeating) {
-                // Skip this one and take the following occurrence. The flag
-                // is cleared here rather than when the skipped time passes,
-                // so a phone that was off over the skipped morning still
-                // ends up in the right state.
-                firesAt = AlarmSchedule.nextOccurrence(alarm.time, alarm.repeatDays, firesAt)
-                graph.alarms.setSkipNext(alarm.id, false)
-            } else {
-                // A one-shot that is skipped is simply off.
-                graph.alarms.setSkipNext(alarm.id, false)
-                graph.alarms.setEnabled(alarm.id, false)
-                return
-            }
+        val decision = AlarmTransitions.resolveFiring(alarm, from)
+        if (decision.clearSkipNext) graph.alarms.setSkipNext(alarm.id, false)
+        if (decision.disable) {
+            graph.alarms.setEnabled(alarm.id, false)
+            return
         }
+        val firesAt = decision.firesAt ?: return
 
         val existing = graph.alarmInstances.getForAlarm(alarm.id)
             .firstOrNull { it.state == AlarmInstanceState.Scheduled }
@@ -201,13 +191,13 @@ class AlarmScheduler(private val context: Context) {
         /** How far ahead the "alarm coming up" notice appears. */
         const val UPCOMING_LEAD_MILLIS = 2 * 60 * 60 * 1000L
 
-        // Instance ids are multiplied out so each instance owns a small
-        // block of request codes and they cannot collide with each other.
-        const val FIRE = 0
-        const val UPCOMING = 1
-        const val SHOW = 2
+        // Slot numbering and the block arithmetic live in AlarmTransitions,
+        // where they are tested.
+        const val FIRE = AlarmTransitions.SLOT_FIRE
+        const val UPCOMING = AlarmTransitions.SLOT_UPCOMING
+        const val SHOW = AlarmTransitions.SLOT_SHOW
 
         fun requestCode(instanceId: Long, slot: Int): Int =
-            (instanceId.toInt() * 8) + slot
+            AlarmTransitions.requestCode(instanceId, slot)
     }
 }

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 
 @Database(
     entities = [
@@ -13,7 +14,7 @@ import androidx.room.RoomDatabase
         LapEntity::class,
     ],
     version = 2,
-    exportSchema = false,
+    exportSchema = true,
 )
 abstract class BasaltDatabase : RoomDatabase() {
     abstract fun alarms(): AlarmDao
@@ -22,25 +23,30 @@ abstract class BasaltDatabase : RoomDatabase() {
     abstract fun laps(): LapDao
 
     companion object {
+
         /**
-         * `exportSchema = false` while the schema is still moving. Before
-         * the first release that anyone else installs, this flips to true
-         * and the schema JSON is committed — migrations are unwritable
-         * without it, and a clock app that loses the user's alarms on
-         * upgrade has failed at its only job.
+         * Every schema change from here on needs one of these.
+         *
+         * The list is empty and that is not an oversight: version 2 is the
+         * first schema that ever reached a device. Version 1 existed only
+         * inside a single development branch, so there is no installed base
+         * to migrate from — but there is one now, which is why
+         * `fallbackToDestructiveMigration()` is gone.
+         *
+         * Without a fallback, a schema change with no matching migration
+         * throws on open instead of silently deleting the user's alarms.
+         * That is the correct trade: a crash is a bug report, and a wiped
+         * alarm list is a missed morning nobody can explain.
          */
+        val MIGRATIONS: Array<Migration> = emptyArray()
+
         fun create(context: Context): BasaltDatabase =
             Room.databaseBuilder(
                 context.applicationContext,
                 BasaltDatabase::class.java,
                 "basalt.db",
             )
-                // Pre-1.0 only. Nothing has shipped, so a schema change that
-                // drops development data is an acceptable trade for not
-                // hand-writing migrations against a moving target. This comes
-                // out — with exportSchema = true and real migrations — before
-                // the first release anyone else installs.
-                .fallbackToDestructiveMigration()
+                .addMigrations(*MIGRATIONS)
                 .build()
     }
 }
