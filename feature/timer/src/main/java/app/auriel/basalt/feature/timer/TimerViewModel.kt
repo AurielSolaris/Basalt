@@ -1,18 +1,17 @@
 package app.auriel.basalt.feature.timer
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.auriel.basalt.core.data.BasaltRepositories
+import app.auriel.basalt.core.data.BasaltGraph
 import app.auriel.basalt.core.data.model.Timer
 import app.auriel.basalt.core.data.model.TimerState
 import app.auriel.basalt.core.data.repository.TimerRepository
-import app.auriel.basalt.core.time.SystemTimeSource
 import app.auriel.basalt.core.time.TimeSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -24,8 +23,7 @@ data class TimerRow(
     val remainingMillis: Long,
 ) {
     val expired: Boolean get() = remainingMillis < 0
-    val running: Boolean
-        get() = timer.state == TimerState.Running || timer.state == TimerState.Expired
+    val running: Boolean get() = timer.isRunning()
 }
 
 data class TimerUiState(
@@ -35,21 +33,25 @@ data class TimerUiState(
 )
 
 class TimerViewModel(
-    private val repository: TimerRepository = BasaltRepositories.timers,
-    private val timeSource: TimeSource = SystemTimeSource(),
+    private val context: Context,
 ) : ViewModel() {
+
+    private val graph = BasaltGraph.get(context)
+    private val repository: TimerRepository = graph.timers
+    private val timeSource: TimeSource = graph.timeSource
+    private val scheduler = TimerScheduler(context)
 
     private val draft = MutableStateFlow(5 * 60)
 
     /**
-     * A ticker rather than a per-timer coroutine.
+     * A single ticker rather than a coroutine per timer.
      *
      * Remaining time is *derived* from each timer's deadline, never
      * decremented, so a dropped tick loses nothing and a timer that ran
-     * while the screen was off is correct the moment it is read again. The
-     * tick exists only to make the UI redraw.
+     * while the process was dead is correct the moment it is read again.
+     * The tick exists only to make the UI redraw.
      */
-    private val tick = MutableStateFlow(timeSource.elapsedRealtimeMillis())
+    private val tick = MutableStateFlow(0L)
 
     val state: StateFlow<TimerUiState> =
         combine(draft, repository.timers, tick) { draftSeconds, timers, now ->
@@ -64,9 +66,12 @@ class TimerViewModel(
         )
 
     init {
+        // Re-arm anything that was running when the process last died, and
+        // refresh the notifications the system has been drawing without us.
+        viewModelScope.launch { scheduler.syncAll() }
         viewModelScope.launch {
             while (true) {
-                tick.value = timeSource.elapsedRealtimeMillis()
+                tick.value = timeSource.now().toEpochMilli()
                 delay(TICK_MILLIS)
             }
         }
@@ -99,12 +104,12 @@ class TimerViewModel(
             else -> timer.totalMillis
         }
         viewModelScope.launch {
-            repository.update(
-                timer.copy(
-                    state = TimerState.Running,
-                    deadlineRealtimeMillis = timeSource.elapsedRealtimeMillis() + remaining,
-                ),
+            val started = timer.copy(
+                state = TimerState.Running,
+                deadlineWallMillis = timeSource.now().toEpochMilli() + remaining,
             )
+            repository.update(started)
+            scheduler.arm(started)
         }
     }
 
@@ -113,9 +118,11 @@ class TimerViewModel(
             repository.update(
                 timer.copy(
                     state = TimerState.Paused,
-                    pausedRemainingMillis = timer.remainingMillis(timeSource.elapsedRealtimeMillis()),
+                    pausedRemainingMillis = timer.remainingMillis(timeSource.now().toEpochMilli()),
                 ),
             )
+            scheduler.cancel(timer.id)
+            TimerAlertService.stop(context)
         }
     }
 
@@ -125,32 +132,40 @@ class TimerViewModel(
                 timer.copy(
                     state = TimerState.Reset,
                     pausedRemainingMillis = timer.totalMillis,
-                    deadlineRealtimeMillis = 0L,
+                    deadlineWallMillis = 0L,
                 ),
             )
+            scheduler.cancel(timer.id)
+            TimerAlertService.stop(context)
         }
     }
 
     /** Adds a minute, to a running timer or a paused one alike. */
     fun addMinute(timer: Timer) {
         viewModelScope.launch {
-            repository.update(
-                when (timer.state) {
-                    TimerState.Running, TimerState.Expired -> timer.copy(
-                        state = TimerState.Running,
-                        deadlineRealtimeMillis = timer.deadlineRealtimeMillis + MINUTE_MILLIS,
-                    )
-
-                    else -> timer.copy(
-                        pausedRemainingMillis = timer.pausedRemainingMillis + MINUTE_MILLIS,
-                    )
-                },
-            )
+            val updated = if (timer.isRunning()) {
+                timer.copy(
+                    state = TimerState.Running,
+                    deadlineWallMillis = timer.deadlineWallMillis + MINUTE_MILLIS,
+                )
+            } else {
+                timer.copy(pausedRemainingMillis = timer.pausedRemainingMillis + MINUTE_MILLIS)
+            }
+            repository.update(updated)
+            if (updated.isRunning()) {
+                // The deadline moved, so the system alarm and the notification's
+                // countdown both have to be replaced, not merely left alone.
+                scheduler.arm(updated)
+                TimerAlertService.stop(context)
+            }
         }
     }
 
     fun remove(timer: Timer) {
-        viewModelScope.launch { repository.remove(timer.id) }
+        viewModelScope.launch {
+            scheduler.cancel(timer.id)
+            repository.remove(timer.id)
+        }
     }
 
     private companion object {

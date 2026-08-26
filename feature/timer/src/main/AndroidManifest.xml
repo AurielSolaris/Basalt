@@ -1,2 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+
+        <!-- Rings when a timer reaches zero. -->
+        <service
+            android:name="app.auriel.basalt.feature.timer.TimerAlertService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <!-- Timer expiry, and the notification's own actions. -->
+        <receiver
+            android:name="app.auriel.basalt.feature.timer.TimerReceiver"
+            android:exported="false" />
+
+    </application>
+</manifest>

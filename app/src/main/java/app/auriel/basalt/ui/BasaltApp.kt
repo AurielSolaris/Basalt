@@ -10,13 +10,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import app.auriel.basalt.core.design.BasaltTheme
 import app.auriel.basalt.core.design.LocalBasaltColors
 import app.auriel.basalt.feature.alarm.AlarmScreen
+import app.auriel.basalt.feature.alarm.RingtonePickerScreen
 import app.auriel.basalt.feature.bedtime.BedtimeScreen
 import app.auriel.basalt.feature.clock.ClockScreen
 import app.auriel.basalt.feature.settings.SettingsScreen
@@ -82,7 +85,24 @@ fun BasaltApp() {
                     navController = navController,
                     startDestination = BasaltDestination.Start.route,
                 ) {
-                    composable(BasaltDestination.Alarm.route) { AlarmScreen() }
+                    composable(BasaltDestination.Alarm.route) {
+                        AlarmScreen(
+                            onEditSound = { alarmId ->
+                                navController.navigate("ringtone/$alarmId")
+                            },
+                        )
+                    }
+
+                    // Not a tab: reached from an alarm, and returns to it.
+                    composable(
+                        route = "ringtone/{alarmId}",
+                        arguments = listOf(navArgument("alarmId") { type = NavType.LongType }),
+                    ) { entry ->
+                        RingtonePickerScreen(
+                            alarmId = entry.arguments?.getLong("alarmId") ?: 0L,
+                            onDone = { navController.popBackStack() },
+                        )
+                    }
                     composable(BasaltDestination.Timer.route) { TimerScreen() }
                     composable(BasaltDestination.Clock.route) { ClockScreen() }
                     composable(BasaltDestination.Stopwatch.route) { StopwatchScreen() }

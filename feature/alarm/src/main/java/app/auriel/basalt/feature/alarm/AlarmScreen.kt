@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -40,8 +41,10 @@ import java.time.Duration
 @Composable
 fun AlarmScreen(
     modifier: Modifier = Modifier,
-    viewModel: AlarmViewModel = viewModel { AlarmViewModel() },
+    onEditSound: (Long) -> Unit = {},
 ) {
+    val context = LocalContext.current.applicationContext
+    val viewModel: AlarmViewModel = viewModel { AlarmViewModel(context) }
     val colors = LocalBasaltColors.current
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -117,6 +120,8 @@ fun AlarmScreen(
                         alarm = alarm,
                         onToggleEnabled = { viewModel.setEnabled(alarm, it) },
                         onToggleDay = { viewModel.toggleDay(alarm, it) },
+                        onToggleSkip = { viewModel.setSkipNext(alarm, it) },
+                        onEditSound = { onEditSound(alarm.id) },
                         onRemove = { viewModel.remove(alarm) },
                     )
                 }
@@ -160,6 +165,8 @@ private fun AlarmCard(
     alarm: Alarm,
     onToggleEnabled: (Boolean) -> Unit,
     onToggleDay: (java.time.DayOfWeek) -> Unit,
+    onToggleSkip: (Boolean) -> Unit,
+    onEditSound: () -> Unit,
     onRemove: () -> Unit,
 ) {
     val colors = LocalBasaltColors.current
@@ -224,7 +231,62 @@ private fun AlarmCard(
                 }
             }
 
-            BasaltButton(label = "DELETE", onClick = onRemove, cellSize = 1.5f)
+            // Skipping is only meaningful for a repeating alarm: a one-shot
+            // that you do not want is a one-shot you delete.
+            if (alarm.repeatDays.isRepeating) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        DotMatrixText(
+                            text = "SKIP NEXT",
+                            cellSize = 1.4f,
+                            shape = DotShape.Chunky,
+                            litColor = colors.silver,
+                            unlitColor = Color.Transparent,
+                        )
+                        DotMatrixText(
+                            text = if (alarm.skipNext) "SKIPPING ONE" else "SCHEDULE INTACT",
+                            cellSize = 1.1f,
+                            shape = DotShape.Chunky,
+                            litColor = colors.pewter,
+                            unlitColor = Color.Transparent,
+                        )
+                    }
+                    BasaltToggle(
+                        checked = alarm.skipNext,
+                        onCheckedChange = onToggleSkip,
+                        contentDescription = "Skip the next occurrence",
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    DotMatrixText(
+                        text = "SOUND",
+                        cellSize = 1.4f,
+                        shape = DotShape.Chunky,
+                        litColor = colors.silver,
+                        unlitColor = Color.Transparent,
+                    )
+                    DotMatrixText(
+                        text = alarm.soundSummary(),
+                        cellSize = 1.1f,
+                        shape = DotShape.Chunky,
+                        litColor = colors.pewter,
+                        unlitColor = Color.Transparent,
+                    )
+                }
+                BasaltButton(label = "CHANGE", onClick = onEditSound, cellSize = 1.4f)
+                BasaltButton(label = "DELETE", onClick = onRemove, cellSize = 1.4f)
+            }
         }
     }
 }
@@ -234,4 +296,16 @@ private fun Duration.readable(): String {
     val hours = toHours()
     val minutes = toMinutes() % 60
     return if (hours > 0) "${hours}H ${minutes}M" else "${minutes}M"
+}
+
+/**
+ * What the alarm will play, in a few characters.
+ *
+ * The trimmed case names its window: "TRIM 1:12" tells the user the choice
+ * survived, which a bare "custom" would not.
+ */
+private fun Alarm.soundSummary(): String = when {
+    hasTrim -> "TRIM FROM " + (ringtoneStartMillis / 1000).let { "%d:%02d".format(it / 60, it % 60) }
+    ringtoneUri != null -> "CUSTOM SOUND"
+    else -> "DEFAULT ALARM"
 }
