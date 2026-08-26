@@ -17,6 +17,9 @@ import app.auriel.basalt.core.data.repository.StoredStopwatchRepository
 import app.auriel.basalt.core.data.repository.TimerRepository
 import app.auriel.basalt.core.time.SystemTimeSource
 import app.auriel.basalt.core.time.TimeSource
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 /**
  * The object graph.
@@ -59,5 +62,18 @@ object BasaltGraph {
         }
         val settings: SettingsRepository by lazy { StoredSettingsRepository(preferences) }
         val cities: CityRepository by lazy { StoredCityRepository(preferences) }
+
+        /**
+         * The stored theme id, available without suspending.
+         *
+         * Exposed on the graph rather than reached for through the
+         * repository because the callers are windows, not screens: an
+         * activity needs it in `onCreate`, before anything can be collected.
+         * See [BasaltPreferences.cachedThemeId].
+         */
+        val cachedThemeId: String? get() = preferences.cachedThemeId
+
+        /** Just the theme id, for the theme host. */
+        val themeIds: Flow<String> = settings.settings.map { it.themeId }.distinctUntilChanged()
     }
 }

@@ -31,6 +31,29 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("b
  */
 class BasaltPreferences(private val context: Context) {
 
+    /**
+     * A synchronous mirror of the theme id.
+     *
+     * DataStore is asynchronous by design, which is right for everything
+     * except the first frame after a cold start: the activity window
+     * background is painted before any composition runs, and the alarm
+     * screen is put in front of someone who is asleep. Neither can wait a
+     * flow emission, and both look broken if they spend that frame in the
+     * wrong palette.
+     *
+     * SharedPreferences is the one store on Android that answers
+     * immediately, so the theme id — and only the theme id — is written to
+     * both. DataStore stays authoritative; this is a cache, and a stale or
+     * missing value costs nothing worse than one frame.
+     */
+    private val mirror by lazy {
+        context.getSharedPreferences(MIRROR_FILE, Context.MODE_PRIVATE)
+    }
+
+    /** The last stored theme id, available before anything has been read. */
+    val cachedThemeId: String?
+        get() = runCatching { mirror.getString(MIRROR_THEME_ID, null) }.getOrNull()
+
     val settings: Flow<Settings> = context.dataStore.data.map(::readSettings)
 
     val stopwatch: Flow<Stopwatch> = context.dataStore.data.map { prefs ->
@@ -50,7 +73,9 @@ class BasaltPreferences(private val context: Context) {
 
     suspend fun update(transform: (Settings) -> Settings) {
         context.dataStore.edit { prefs ->
-            writeSettings(prefs, transform(readSettings(prefs)))
+            val updated = transform(readSettings(prefs))
+            writeSettings(prefs, updated)
+            mirror.edit().putString(MIRROR_THEME_ID, updated.themeId).apply()
         }
     }
 
@@ -73,6 +98,7 @@ class BasaltPreferences(private val context: Context) {
         runCatching { StopwatchState.valueOf(name) }.getOrDefault(StopwatchState.Reset)
 
     private fun readSettings(prefs: Preferences) = Settings(
+        themeId = prefs[Keys.ThemeId] ?: Settings().themeId,
         use24Hour = prefs[Keys.Use24Hour] ?: true,
         weekStart = prefs[Keys.WeekStart]?.let { DayOfWeek.of(it) } ?: DayOfWeek.MONDAY,
         homeZoneId = prefs[Keys.HomeZone],
@@ -94,6 +120,7 @@ class BasaltPreferences(private val context: Context) {
     )
 
     private fun writeSettings(prefs: androidx.datastore.preferences.core.MutablePreferences, s: Settings) {
+        prefs[Keys.ThemeId] = s.themeId
         prefs[Keys.Use24Hour] = s.use24Hour
         prefs[Keys.WeekStart] = s.weekStart.value
         s.homeZoneId?.let { prefs[Keys.HomeZone] = it }
@@ -111,6 +138,7 @@ class BasaltPreferences(private val context: Context) {
     }
 
     private object Keys {
+        val ThemeId = stringPreferencesKey("theme_id")
         val Use24Hour = booleanPreferencesKey("use_24_hour")
         val WeekStart = intPreferencesKey("week_start")
         val HomeZone = stringPreferencesKey("home_zone")
@@ -133,5 +161,10 @@ class BasaltPreferences(private val context: Context) {
 
         val CityIds = stringSetPreferencesKey("city_ids")
         val CityOrder = stringPreferencesKey("city_order")
+    }
+
+    private companion object {
+        const val MIRROR_FILE = "basalt_boot"
+        const val MIRROR_THEME_ID = "theme_id"
     }
 }

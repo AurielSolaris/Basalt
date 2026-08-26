@@ -16,7 +16,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import app.auriel.basalt.core.design.BasaltTheme
+import app.auriel.basalt.core.data.rememberGraph
+import app.auriel.basalt.core.design.BasaltThemeHost
 import app.auriel.basalt.core.design.LocalBasaltColors
 import app.auriel.basalt.feature.alarm.AlarmScreen
 import app.auriel.basalt.feature.alarm.RingtonePickerScreen
@@ -32,7 +33,11 @@ import app.auriel.basalt.feature.timer.TimerScreen
  */
 @Composable
 fun BasaltApp() {
-    BasaltTheme {
+    val graph = rememberGraph()
+    BasaltThemeHost(
+        themeIdFlow = graph.themeIds,
+        initialThemeId = graph.cachedThemeId,
+    ) {
         val colors = LocalBasaltColors.current
         val navController = rememberNavController()
         val backStackEntry by navController.currentBackStackEntryAsState()

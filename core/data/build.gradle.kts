@@ -23,6 +23,21 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+}
+
+/**
+ * The exported schema.
+ *
+ * Room cannot verify a migration it has no "before" schema for, so the JSON
+ * is generated at build time and committed. It is a build output that is
+ * also a source of truth: deleting it does not break the build, it breaks
+ * the next migration, quietly, months later.
+ */
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {

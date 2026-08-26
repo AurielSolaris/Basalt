@@ -27,6 +27,17 @@ object ClockFormat {
     fun meridiem(time: LocalTime, use24Hour: Boolean): String =
         if (use24Hour) "" else if (time.hour < 12) "AM" else "PM"
 
+    /**
+     * `SS` — the seconds field on its own.
+     *
+     * Separate from [time] rather than an option on it, because the readout
+     * draws it in its own column: at the main cell size an inline
+     * `HH:MM:SS` does not fit on a phone, and a field that changes every
+     * second should not be able to reflow the fields that do not.
+     */
+    fun seconds(time: LocalTime): String =
+        String.format(Locale.US, "%02d", time.second)
+
     /** `MON 26 AUG` — the sub-line under the main readout. */
     fun date(date: LocalDate, locale: Locale = Locale.getDefault()): String {
         val day = date.dayOfWeek.getDisplayName(TextStyle.SHORT, locale).uppercase(locale)

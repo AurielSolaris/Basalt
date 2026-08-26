@@ -29,6 +29,7 @@ import app.auriel.basalt.core.design.InlineStepper
 import app.auriel.basalt.core.design.LocalBasaltColors
 import app.auriel.basalt.core.design.SectionHeader
 import app.auriel.basalt.core.design.SettingRow
+import app.auriel.basalt.core.design.ThemePicker
 import app.auriel.basalt.core.dotmatrix.DotMatrixText
 import app.auriel.basalt.core.dotmatrix.DotShape
 
@@ -45,6 +46,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
     val viewModel: SettingsViewModel = viewModel { SettingsViewModel(graph) }
     val colors = LocalBasaltColors.current
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val theme by viewModel.theme.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     // These are granted in the *system* settings app, so the only reliable
@@ -66,6 +68,14 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
+        SectionHeader("THEME")
+
+        ThemePicker(
+            selected = theme,
+            onSelect = viewModel::setTheme,
+            modifier = Modifier.padding(vertical = 4.dp),
+        )
+
         SectionHeader("DISPLAY")
 
         SettingRow(label = "24 HOUR CLOCK") {

@@ -5,8 +5,11 @@ import androidx.lifecycle.viewModelScope
 import app.auriel.basalt.core.data.BasaltGraph
 import app.auriel.basalt.core.data.model.Settings
 import app.auriel.basalt.core.data.repository.SettingsRepository
+import app.auriel.basalt.core.design.BasaltThemeId
+import app.auriel.basalt.core.design.BasaltThemes
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
@@ -22,6 +25,17 @@ class SettingsViewModel(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = Settings(),
     )
+
+    /** The installed palette, resolved from the stored id. */
+    val theme: StateFlow<BasaltThemeId> = settings
+        .map { BasaltThemes.byId(it.themeId) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = BasaltThemes.lastKnown,
+        )
+
+    fun setTheme(theme: BasaltThemeId) = edit { it.copy(themeId = theme.id) }
 
     fun set24Hour(value: Boolean) = edit { it.copy(use24Hour = value) }
     fun setShowSeconds(value: Boolean) = edit { it.copy(showSeconds = value) }
