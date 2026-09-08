@@ -24,7 +24,7 @@ import app.auriel.basalt.core.design.LocalBasaltColors
 import app.auriel.basalt.core.design.SectionHeader
 import app.auriel.basalt.core.design.SettingRow
 import app.auriel.basalt.core.design.WeekdayChips
-import app.auriel.basalt.core.dotmatrix.DotMatrixText
+import app.auriel.basalt.core.design.BasaltText
 import app.auriel.basalt.core.dotmatrix.DotShape
 import java.time.Duration
 import java.time.LocalTime
@@ -69,7 +69,7 @@ fun BedtimeScreen(modifier: Modifier = Modifier) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                DotMatrixText(
+                BasaltText(
                     text = "%dH %02dM".format(
                         schedule.durationMinutes / 60,
                         schedule.durationMinutes % 60,
@@ -79,7 +79,7 @@ fun BedtimeScreen(modifier: Modifier = Modifier) {
                     unlitColor = colors.unlit,
                     contentDescription = "Sleep window length",
                 )
-                DotMatrixText(
+                BasaltText(
                     text = if (state.insideWindow) "WINDING DOWN" else "IN BED AT " + schedule.bedtime.hhmm(),
                     cellSize = 1.2f,
                     shape = DotShape.Chunky,
@@ -90,7 +90,7 @@ fun BedtimeScreen(modifier: Modifier = Modifier) {
         }
 
         state.untilWindDown?.let { until ->
-            DotMatrixText(
+            BasaltText(
                 text = "WIND DOWN IN " + until.readable(),
                 cellSize = 1.4f,
                 shape = DotShape.Chunky,

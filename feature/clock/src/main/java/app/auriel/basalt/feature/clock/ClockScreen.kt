@@ -18,7 +18,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.auriel.basalt.core.data.model.Settings
 import app.auriel.basalt.core.data.rememberGraph
 import app.auriel.basalt.core.design.LocalBasaltColors
-import app.auriel.basalt.core.dotmatrix.DotMatrixText
+import app.auriel.basalt.core.design.BasaltText
 import app.auriel.basalt.core.time.ClockFormat
 import app.auriel.basalt.core.time.SystemTimeSource
 import app.auriel.basalt.core.time.TimeSource
@@ -84,7 +84,7 @@ fun ClockScreen(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
-            DotMatrixText(
+            BasaltText(
                 text = ClockFormat.time(time, settings.use24Hour),
                 cellSize = 9f,
                 litColor = colors.copper,
@@ -97,7 +97,7 @@ fun ClockScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     if (settings.showSeconds) {
-                        DotMatrixText(
+                        BasaltText(
                             text = ClockFormat.seconds(time),
                             cellSize = 3f,
                             litColor = colors.copperHot,
@@ -106,7 +106,7 @@ fun ClockScreen(
                         )
                     }
                     if (meridiem.isNotEmpty()) {
-                        DotMatrixText(
+                        BasaltText(
                             text = meridiem,
                             cellSize = 3f,
                             litColor = colors.silver,
@@ -117,7 +117,7 @@ fun ClockScreen(
             }
         }
 
-        DotMatrixText(
+        BasaltText(
             text = ClockFormat.date(now.toLocalDate()),
             cellSize = 3f,
             litColor = colors.silver,

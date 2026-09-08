@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 /**
  * Installs the selected theme and makes the window agree with it.
@@ -35,27 +36,46 @@ import kotlinx.coroutines.flow.Flow
  * settings are stored. Resolution — including falling back on an id it does
  * not recognise — happens here.
  *
+ * The UI style rides along with the palette rather than getting a host of
+ * its own. It has exactly the same shape of problem — an id in storage, a
+ * flow of changes, and a first frame that cannot wait for either — and a
+ * second provider nested inside this one would be two things to remember to
+ * wrap a surface in when the whole point is that a surface should not have
+ * to think about it.
+ *
+ * Unlike the palette, the style has no window-level consequences: letters
+ * do not change what colour the status bar icons have to be.
+ *
  * @param initialThemeId a synchronously-available id, used for the frames
  *   before [themeIdFlow] has emitted. Passing null is safe and costs one
  *   frame in the default palette.
+ * @param initialStyleId the same, for the lettering.
  */
 @Composable
 fun BasaltThemeHost(
     themeIdFlow: Flow<String?>,
     initialThemeId: String? = null,
+    styleIdFlow: Flow<String?>? = null,
+    initialStyleId: String? = null,
     content: @Composable () -> Unit,
 ) {
     val initial = remember(initialThemeId) {
         BasaltThemes.byId(initialThemeId).also(BasaltThemes::remember)
     }
+    val initialStyle = remember(initialStyleId) {
+        BasaltStyles.byId(initialStyleId).also(BasaltStyles::remember)
+    }
     val themeId by themeIdFlow.collectAsState(initial = initial.id)
     val theme = BasaltThemes.byId(themeId)
+    val styleId by (styleIdFlow ?: emptyFlow()).collectAsState(initial = initialStyle.id)
+    val style = BasaltStyles.byId(styleId)
 
     val view = LocalView.current
     val inspecting = LocalInspectionMode.current
 
     SideEffect {
         BasaltThemes.remember(theme)
+        BasaltStyles.remember(style)
         if (inspecting) return@SideEffect
         val window = view.context.findActivity()?.window ?: return@SideEffect
         window.setBackgroundDrawable(ColorDrawable(theme.colors.ink.toArgb()))
@@ -65,7 +85,7 @@ fun BasaltThemeHost(
         }
     }
 
-    BasaltTheme(theme = theme, content = content)
+    BasaltTheme(theme = theme, style = style, content = content)
 }
 
 /**

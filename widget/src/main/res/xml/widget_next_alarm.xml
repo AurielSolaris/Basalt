@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  NEXT ALARM — One engraved line: when the next alarm rings, and its label.
+
+  minWidth/minHeight are the size the widget is *placed* at; minResize* is how
+  small it may then be dragged. updatePeriodMillis is zero on purpose: the
+  framework's own repeat is capped at thirty minutes and cannot be aligned to
+  the minute, so every Basalt widget is driven by the module's single exact
+  alarm instead. See BasaltWidgets.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="40dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="1"
+    android:minResizeWidth="180dp"
+    android:minResizeHeight="40dp"
+    android:maxResizeWidth="320dp"
+    android:maxResizeHeight="110dp"
+    android:updatePeriodMillis="0"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:previewImage="@drawable/widget_preview"
+    android:description="@string/widget_next_alarm_description"
+    android:initialLayout="@layout/glance_default_loading_layout" />

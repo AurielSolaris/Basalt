@@ -27,7 +27,7 @@ import app.auriel.basalt.core.design.BasaltStepper
 import app.auriel.basalt.core.design.BasaltToggle
 import app.auriel.basalt.core.design.BezelPanel
 import app.auriel.basalt.core.design.LocalBasaltColors
-import app.auriel.basalt.core.dotmatrix.DotMatrixText
+import app.auriel.basalt.core.design.BasaltText
 import app.auriel.basalt.core.dotmatrix.DotShape
 import java.time.Duration
 
@@ -72,7 +72,7 @@ fun AlarmScreen(
                         onUp = { viewModel.adjustDraft(hours = 1) },
                         onDown = { viewModel.adjustDraft(hours = -1) },
                     )
-                    DotMatrixText(
+                    BasaltText(
                         text = ":",
                         cellSize = 3.4f,
                         litColor = colors.bronze,
@@ -94,7 +94,7 @@ fun AlarmScreen(
         }
 
         state.nextAlarmIn?.let { untilNext ->
-            DotMatrixText(
+            BasaltText(
                 text = "NEXT IN " + untilNext.readable(),
                 cellSize = 1.5f,
                 shape = DotShape.Chunky,
@@ -105,7 +105,7 @@ fun AlarmScreen(
         }
 
         if (state.alarms.isEmpty()) {
-            DotMatrixText(
+            BasaltText(
                 text = "NO ALARMS",
                 cellSize = 2f,
                 shape = DotShape.Chunky,
@@ -142,14 +142,14 @@ private fun StepperField(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        DotMatrixText(
+        BasaltText(
             text = label,
             cellSize = 1.3f,
             shape = DotShape.Chunky,
             litColor = colors.pewter,
             unlitColor = Color.Transparent,
         )
-        DotMatrixText(
+        BasaltText(
             text = value.toString().padStart(2, '0'),
             cellSize = 3.4f,
             litColor = colors.copper,
@@ -183,7 +183,7 @@ private fun AlarmCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    DotMatrixText(
+                    BasaltText(
                         text = "%02d:%02d".format(alarm.time.hour, alarm.time.minute),
                         cellSize = 4f,
                         // A disabled alarm is dimmed, not hidden: it is
@@ -191,7 +191,7 @@ private fun AlarmCard(
                         litColor = if (alarm.enabled) colors.copper else colors.pewter,
                         unlitColor = colors.unlit,
                     )
-                    DotMatrixText(
+                    BasaltText(
                         text = alarm.repeatDays.summary(),
                         cellSize = 1.3f,
                         shape = DotShape.Chunky,
@@ -219,7 +219,7 @@ private fun AlarmCard(
                             .clickable { onToggleDay(day) },
                         contentAlignment = Alignment.Center,
                     ) {
-                        DotMatrixText(
+                        BasaltText(
                             text = initial,
                             cellSize = 1.8f,
                             shape = DotShape.Chunky,
@@ -240,14 +240,14 @@ private fun AlarmCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        DotMatrixText(
+                        BasaltText(
                             text = "SKIP NEXT",
                             cellSize = 1.4f,
                             shape = DotShape.Chunky,
                             litColor = colors.silver,
                             unlitColor = Color.Transparent,
                         )
-                        DotMatrixText(
+                        BasaltText(
                             text = if (alarm.skipNext) "SKIPPING ONE" else "SCHEDULE INTACT",
                             cellSize = 1.1f,
                             shape = DotShape.Chunky,
@@ -269,14 +269,14 @@ private fun AlarmCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    DotMatrixText(
+                    BasaltText(
                         text = "SOUND",
                         cellSize = 1.4f,
                         shape = DotShape.Chunky,
                         litColor = colors.silver,
                         unlitColor = Color.Transparent,
                     )
-                    DotMatrixText(
+                    BasaltText(
                         text = alarm.soundSummary(),
                         cellSize = 1.1f,
                         shape = DotShape.Chunky,

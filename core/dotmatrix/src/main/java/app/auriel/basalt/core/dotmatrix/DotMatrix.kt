@@ -4,10 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -36,11 +33,20 @@ fun DotMatrix(
     modifier: Modifier = Modifier,
     shape: DotShape = DotShape.Round,
     /** Fraction of the cell the dot occupies. */
-    fill: Float = 0.78f,
+    fill: Float = DotFill,
     isLit: (x: Int, y: Int) -> Boolean,
 ) {
     Canvas(modifier = modifier.dotMatrixSize(columns, rows, cellSize)) {
-        drawDotMatrix(columns, rows, cellSize.toPx(), litColor, unlitColor, shape, fill, isLit)
+        drawDotGrid(
+            columns = columns,
+            rows = rows,
+            cellPx = cellSize.toPx(),
+            litColor = litColor,
+            unlitColor = unlitColor,
+            shape = shape,
+            fill = fill,
+            isLit = isLit,
+        )
     }
 }
 
@@ -49,40 +55,6 @@ internal fun Modifier.dotMatrixSize(columns: Int, rows: Int, cellSize: Dp): Modi
         width = cellSize * columns,
         height = cellSize * rows,
     )
-
-internal fun DrawScope.drawDotMatrix(
-    columns: Int,
-    rows: Int,
-    cellPx: Float,
-    litColor: Color,
-    unlitColor: Color,
-    shape: DotShape,
-    fill: Float,
-    isLit: (x: Int, y: Int) -> Boolean,
-) {
-    val dot = cellPx * fill
-    val inset = (cellPx - dot) / 2f
-    for (y in 0 until rows) {
-        for (x in 0 until columns) {
-            val color = if (isLit(x, y)) litColor else unlitColor
-            val left = x * cellPx + inset
-            val top = y * cellPx + inset
-            when (shape) {
-                DotShape.Round -> drawCircle(
-                    color = color,
-                    radius = dot / 2f,
-                    center = Offset(left + dot / 2f, top + dot / 2f),
-                )
-
-                DotShape.Chunky -> drawRect(
-                    color = color,
-                    topLeft = Offset(left, top),
-                    size = Size(dot, dot),
-                )
-            }
-        }
-    }
-}
 
 /** Convenience default used by callers that have no opinion on density. */
 val DefaultCellSize: Dp = 3.dp

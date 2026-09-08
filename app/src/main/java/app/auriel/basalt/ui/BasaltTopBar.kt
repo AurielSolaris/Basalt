@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import app.auriel.basalt.core.design.BasaltIcon
 import app.auriel.basalt.core.design.BasaltIconGlyph
 import app.auriel.basalt.core.design.LocalBasaltColors
-import app.auriel.basalt.core.dotmatrix.DotMatrixText
+import app.auriel.basalt.core.design.BasaltText
 import app.auriel.basalt.core.dotmatrix.DotShape
 
 /**
@@ -33,7 +33,7 @@ fun BasaltTopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        DotMatrixText(
+        BasaltText(
             text = "BASALT",
             cellSize = 2f,
             shape = DotShape.Chunky,

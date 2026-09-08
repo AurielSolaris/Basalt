@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_analog_label">Basalt Analog</string>
+    <string name="widget_analog_description">Etched dial and needle hands.</string>
+    <string name="widget_digital_label">Basalt Digital</string>
+    <string name="widget_digital_description">Dot-matrix time, date beneath, next alarm below that.</string>
+    <string name="widget_dual_label">Basalt Dual</string>
+    <string name="widget_dual_description">Home and away side by side, each tinted for its own daylight.</string>
+    <string name="widget_next_alarm_label">Basalt Next Alarm</string>
+    <string name="widget_next_alarm_description">One engraved line: when the next alarm rings, and its label.</string>
+    <string name="widget_quick_look_label">Basalt Quick Look</string>
+    <string name="widget_quick_look_description">Time, date, next alarm and anything running, on one dense line.</string>
+    <string name="widget_solar_label">Basalt Solar</string>
+    <string name="widget_solar_description">Where the sun is: a day arc with the current hour marked.</string>
+    <string name="widget_stacked_label">Basalt Stacked</string>
+    <string name="widget_stacked_description">Hours over minutes, filling a square.</string>
+    <string name="widget_stopwatch_label">Basalt Stopwatch</string>
+    <string name="widget_stopwatch_description">Arc gauge and elapsed time, with start and lap in the widget.</string>
+    <string name="widget_timers_label">Basalt Timers</string>
+    <string name="widget_timers_description">Every timer with its remaining time, soonest first.</string>
+    <string name="widget_world_label">Basalt World</string>
+    <string name="widget_world_description">The chosen cities as a board, each tinted for its own daylight.</string>
+</resources>
