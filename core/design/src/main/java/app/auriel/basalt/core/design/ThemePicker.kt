@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import app.auriel.basalt.core.dotmatrix.DotMatrixText
 import app.auriel.basalt.core.dotmatrix.DotShape
 
 /**
@@ -70,14 +69,14 @@ private fun ThemeRow(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            DotMatrixText(
+            BasaltText(
                 text = theme.displayName,
                 cellSize = 1.6f,
                 shape = DotShape.Chunky,
                 litColor = if (selected) colors.copper else colors.silver,
                 unlitColor = Color.Transparent,
             )
-            DotMatrixText(
+            BasaltText(
                 text = theme.tagline,
                 cellSize = 1.1f,
                 shape = DotShape.Chunky,

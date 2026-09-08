@@ -28,7 +28,7 @@ import app.auriel.basalt.core.data.BasaltGraph
 import app.auriel.basalt.core.design.BasaltButton
 import app.auriel.basalt.core.design.BasaltThemeHost
 import app.auriel.basalt.core.design.LocalBasaltColors
-import app.auriel.basalt.core.dotmatrix.DotMatrixText
+import app.auriel.basalt.core.design.BasaltText
 import app.auriel.basalt.core.dotmatrix.DotShape
 
 /**
@@ -52,11 +52,14 @@ class AlarmActivity : ComponentActivity() {
         val graph = BasaltGraph.get(this)
         setContent {
             // The alarm screen is put in front of someone who is asleep, so
-            // it starts from the synchronously-cached theme id rather than
-            // spending a frame in the default palette.
+            // it starts from the synchronously-cached theme and style ids
+            // rather than spending a frame in the default palette and the
+            // wrong lettering.
             BasaltThemeHost(
                 themeIdFlow = graph.themeIds,
                 initialThemeId = graph.cachedThemeId,
+                styleIdFlow = graph.uiStyleIds,
+                initialStyleId = graph.cachedUiStyleId,
             ) {
                 AlarmScreenContent(
                     instanceId = instanceId,
@@ -139,14 +142,14 @@ private fun AlarmScreenContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        DotMatrixText(
+        BasaltText(
             text = label.uppercase(),
             cellSize = 2f,
             shape = DotShape.Chunky,
             litColor = colors.silver,
             unlitColor = Color.Transparent,
         )
-        DotMatrixText(
+        BasaltText(
             text = time,
             cellSize = 9f,
             litColor = colors.emberAlarm,

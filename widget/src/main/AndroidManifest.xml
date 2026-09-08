@@ -1,2 +1,167 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+
+        <!--
+          The ten providers.
+
+          A widget provider is a BroadcastReceiver named in the manifest, which
+          the package installer reads long before any Basalt code runs — so the
+          one place the catalogue cannot stay a list is here and in the classes
+          these point at. Each is a name and nothing else; all ten share one
+          implementation.
+
+          exported="false" throughout: the launcher binds these through the
+          AppWidgetHost, which does not need them exported, and an exported
+          receiver is a surface for no benefit.
+        -->
+        <receiver
+            android:name=".glance.AnalogWidgetReceiver"
+            android:label="@string/widget_analog_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_analog" />
+        </receiver>
+
+        <receiver
+            android:name=".glance.DigitalWidgetReceiver"
+            android:label="@string/widget_digital_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_digital" />
+        </receiver>
+
+        <receiver
+            android:name=".glance.DualWidgetReceiver"
+            android:label="@string/widget_dual_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_dual" />
+        </receiver>
+
+        <receiver
+            android:name=".glance.NextAlarmWidgetReceiver"
+            android:label="@string/widget_next_alarm_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_next_alarm" />
+        </receiver>
+
+        <receiver
+            android:name=".glance.QuickLookWidgetReceiver"
+            android:label="@string/widget_quick_look_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quick_look" />
+        </receiver>
+
+        <receiver
+            android:name=".glance.SolarWidgetReceiver"
+            android:label="@string/widget_solar_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_solar" />
+        </receiver>
+
+        <receiver
+            android:name=".glance.StackedWidgetReceiver"
+            android:label="@string/widget_stacked_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_stacked" />
+        </receiver>
+
+        <receiver
+            android:name=".glance.StopwatchWidgetReceiver"
+            android:label="@string/widget_stopwatch_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_stopwatch" />
+        </receiver>
+
+        <receiver
+            android:name=".glance.TimersWidgetReceiver"
+            android:label="@string/widget_timers_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_timers" />
+        </receiver>
+
+        <receiver
+            android:name=".glance.WorldWidgetReceiver"
+            android:label="@string/widget_world_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_world" />
+        </receiver>
+
+        <!--
+          The single update pass.
+
+          One receiver draws every installed widget and then schedules its own
+          successor, so a home screen with six Basalt widgets on it wakes the
+          device once a minute rather than six times.
+
+          The system broadcasts matter more than they look. A time-zone change
+          moves every world and dual face at once and none of them would notice
+          until the minute turned; a locale change re-renders every date line;
+          and BOOT_COMPLETED is what puts the pass back on the calendar at all,
+          since a pending alarm does not survive a restart.
+        -->
+        <receiver
+            android:name=".update.WidgetTickReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="app.auriel.basalt.widget.TICK" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+
+</manifest>

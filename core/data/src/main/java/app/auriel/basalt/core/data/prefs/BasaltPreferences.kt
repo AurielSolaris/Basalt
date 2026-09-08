@@ -54,6 +54,18 @@ class BasaltPreferences(private val context: Context) {
     val cachedThemeId: String?
         get() = runCatching { mirror.getString(MIRROR_THEME_ID, null) }.getOrNull()
 
+    /**
+     * The last stored UI style id, available before anything has been read.
+     *
+     * Mirrored for the same reason the theme is: the alarm screen and the
+     * window background are painted before DataStore can answer, and a
+     * readout that changes typeface one frame in is as jarring as one that
+     * changes colour. Widgets read it too, from a process that may have been
+     * started only to draw them.
+     */
+    val cachedUiStyleId: String?
+        get() = runCatching { mirror.getString(MIRROR_UI_STYLE_ID, null) }.getOrNull()
+
     val settings: Flow<Settings> = context.dataStore.data.map(::readSettings)
 
     val stopwatch: Flow<Stopwatch> = context.dataStore.data.map { prefs ->
@@ -75,7 +87,10 @@ class BasaltPreferences(private val context: Context) {
         context.dataStore.edit { prefs ->
             val updated = transform(readSettings(prefs))
             writeSettings(prefs, updated)
-            mirror.edit().putString(MIRROR_THEME_ID, updated.themeId).apply()
+            mirror.edit()
+                .putString(MIRROR_THEME_ID, updated.themeId)
+                .putString(MIRROR_UI_STYLE_ID, updated.uiStyleId)
+                .apply()
         }
     }
 
@@ -99,6 +114,7 @@ class BasaltPreferences(private val context: Context) {
 
     private fun readSettings(prefs: Preferences) = Settings(
         themeId = prefs[Keys.ThemeId] ?: Settings().themeId,
+        uiStyleId = prefs[Keys.UiStyleId] ?: Settings().uiStyleId,
         use24Hour = prefs[Keys.Use24Hour] ?: true,
         weekStart = prefs[Keys.WeekStart]?.let { DayOfWeek.of(it) } ?: DayOfWeek.MONDAY,
         homeZoneId = prefs[Keys.HomeZone],
@@ -121,6 +137,7 @@ class BasaltPreferences(private val context: Context) {
 
     private fun writeSettings(prefs: androidx.datastore.preferences.core.MutablePreferences, s: Settings) {
         prefs[Keys.ThemeId] = s.themeId
+        prefs[Keys.UiStyleId] = s.uiStyleId
         prefs[Keys.Use24Hour] = s.use24Hour
         prefs[Keys.WeekStart] = s.weekStart.value
         s.homeZoneId?.let { prefs[Keys.HomeZone] = it }
@@ -139,6 +156,7 @@ class BasaltPreferences(private val context: Context) {
 
     private object Keys {
         val ThemeId = stringPreferencesKey("theme_id")
+        val UiStyleId = stringPreferencesKey("ui_style_id")
         val Use24Hour = booleanPreferencesKey("use_24_hour")
         val WeekStart = intPreferencesKey("week_start")
         val HomeZone = stringPreferencesKey("home_zone")
@@ -166,5 +184,6 @@ class BasaltPreferences(private val context: Context) {
     private companion object {
         const val MIRROR_FILE = "basalt_boot"
         const val MIRROR_THEME_ID = "theme_id"
+        const val MIRROR_UI_STYLE_ID = "ui_style_id"
     }
 }

@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import app.auriel.basalt.core.design.BasaltIconGlyph
 import app.auriel.basalt.core.design.BezelPanel
 import app.auriel.basalt.core.design.LocalBasaltColors
-import app.auriel.basalt.core.dotmatrix.DotMatrixText
+import app.auriel.basalt.core.design.BasaltText
 import app.auriel.basalt.core.dotmatrix.DotShape
 
 /**
@@ -67,7 +67,7 @@ fun BasaltTabBar(
                         size = 22.dp,
                         strokeWidth = if (selected) 1.7.dp else 1.5.dp,
                     )
-                    DotMatrixText(
+                    BasaltText(
                         text = destination.label,
                         cellSize = 1.35f,
                         shape = DotShape.Chunky,

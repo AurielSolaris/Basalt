@@ -34,7 +34,7 @@ import app.auriel.basalt.core.design.InlineStepper
 import app.auriel.basalt.core.design.LocalBasaltColors
 import app.auriel.basalt.core.design.SectionHeader
 import app.auriel.basalt.core.design.SettingRow
-import app.auriel.basalt.core.dotmatrix.DotMatrixText
+import app.auriel.basalt.core.design.BasaltText
 import app.auriel.basalt.core.dotmatrix.DotShape
 
 /**
@@ -78,7 +78,7 @@ fun RingtonePickerScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            DotMatrixText(
+            BasaltText(
                 text = "ALARM SOUND",
                 cellSize = 1.9f,
                 shape = DotShape.Chunky,
@@ -174,7 +174,7 @@ private fun TrimPanel(
                 .padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            DotMatrixText(
+            BasaltText(
                 text = "TRIM",
                 cellSize = 1.5f,
                 shape = DotShape.Chunky,
@@ -208,14 +208,14 @@ private fun TrimPanel(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                DotMatrixText(
+                BasaltText(
                     text = state.startMillis.asClock(),
                     cellSize = 1.3f,
                     shape = DotShape.Chunky,
                     litColor = colors.copper,
                     unlitColor = Color.Transparent,
                 )
-                DotMatrixText(
+                BasaltText(
                     text = state.durationMillis.asClock(),
                     cellSize = 1.3f,
                     shape = DotShape.Chunky,
@@ -290,7 +290,7 @@ private fun ToneRow(title: String, selected: Boolean, onClick: () -> Unit) {
                 .size(12.dp)
                 .background(if (selected) colors.copper else colors.ironOxide),
         )
-        DotMatrixText(
+        BasaltText(
             text = title,
             cellSize = 1.5f,
             shape = DotShape.Chunky,

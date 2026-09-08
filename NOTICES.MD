@@ -31,6 +31,7 @@ out over many years by people who had to ship it to a billion devices.
 | `core/data/model/Timer.kt` | `data/Timer.kt`, `data/TimerModel.kt` | Timer state semantics: the deadline-while-running / remainder-while-paused split, and the decision that a timer reaching zero keeps counting *negatively* rather than stopping. |
 | `core/data/model/Stopwatch.kt` | `data/Stopwatch.kt`, `data/Lap.kt` | Accumulated time plus an optional start mark, so pausing needs no clock read and elapsed time does not drift across start/stop cycles; and storing each lap's split *and* running total rather than deriving one from the other. |
 | `core/data/model/City.kt` | `data/City.kt` | Storing a zone id rather than a fixed UTC offset. A world clock that stores offsets is wrong twice a year. |
+| `widget/render/FaceRenderer.kt` | `WidgetUtils.kt` | The *reasoning* about scaling a widget's contents to the box the launcher gives it, rather than authoring at a fixed size. Basalt's implementation shares no structure with it: DeskClock scales a `RemoteViews` text size, Basalt measures a face and rasterises it. |
 | Feature scope | DeskClock as a whole | Which features a clock app is expected to have at all, and how they divide into sections. |
 
 ### What is planned but not yet present
@@ -41,9 +42,7 @@ out over many years by people who had to ship it to a billion devices.
   city list is a five-entry placeholder written for development. When the import
   happens, this section moves up into the table above and the licence header is
   carried with the file.
-- **Widget sizing behaviour.** DeskClock's `WidgetUtils` works out how to scale
-  a clock widget's contents to the box the launcher gives it. Basalt's widget
-  work (v0.3.0) will reference that reasoning.
+- *(Nothing else outstanding.)*
 
 ### What is *not* from DeskClock
 
@@ -51,6 +50,21 @@ Everything visual. The palette, the dot-matrix renderer and its glyphs, the
 chrome vocabulary, the icon set, the launcher icon, the navigation structure and
 every control are original to Basalt. DeskClock is a Material app; Basalt
 deliberately contains no Material Design at all.
+
+### A note on the widget catalogue
+
+Basalt ships ten widgets. AOSP DeskClock ships **two** — an analog clock and a
+digital one — and that is as true of the Android 16 tree as it was of Android
+10; the file set is unchanged between them. The large widget collections people
+associate with "the Android clock" belong to Google's proprietary Clock app,
+which is not open source and was not consulted.
+
+The catalogue is therefore **not** derived from DeskClock. It is the union of
+the widget *ideas* published by Google Clock, Samsung Clock and Nothing OS,
+deduplicated — which is a description of what those apps show a user, not of
+how any of them is built. Each entry records where its idea came from in
+`BasaltWidget.origin`. No code, layout or resource from any of them is present
+here, and none of those vendors endorses this app.
 
 ---
 
@@ -97,6 +111,27 @@ Licensed under the Apache License 2.0.
 
 Gradle (Apache 2.0) and the Android Gradle Plugin (Apache 2.0) are build-time
 tools and are not distributed as part of the application.
+
+## Fonts
+
+| Font | Used for | Copyright | Licence |
+|---|---|---|---|
+| **EB Garamond** | The **Vintage** UI style | Copyright 2017 The EB Garamond Project Authors | SIL Open Font License 1.1 |
+
+- **Source:** <https://github.com/octaviopardo/EBGaramond12>, via
+  [Google Fonts](https://fonts.google.com/specimen/EB+Garamond)
+- **Shipped as:** `core/design/src/main/res/font/eb_garamond.ttf` — the
+  upstream variable font (`wght` axis), unmodified.
+
+The OFL permits bundling in an application, including a commercial one. The
+font is not renamed, so the Reserved Font Name clause is satisfied by leaving
+it alone. Its full licence text is in
+[THIRD_PARTY_LICENSE.MD](THIRD_PARTY_LICENSE.MD).
+
+Basalt's **Retro** style is not a font and is not covered by any of this: its
+glyphs are hand-authored bitmasks in `core/dotmatrix`, original to this project.
+
+---
 
 ## Colour schemes
 

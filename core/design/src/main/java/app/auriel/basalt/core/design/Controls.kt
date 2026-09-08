@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import app.auriel.basalt.core.dotmatrix.DotMatrixText
 import app.auriel.basalt.core.dotmatrix.DotShape
 
 /**
@@ -60,7 +59,7 @@ fun BasaltButton(
             .padding(horizontal = 12.dp, vertical = 9.dp),
         contentAlignment = Alignment.Center,
     ) {
-        DotMatrixText(
+        BasaltText(
             text = label,
             cellSize = cellSize,
             shape = DotShape.Chunky,

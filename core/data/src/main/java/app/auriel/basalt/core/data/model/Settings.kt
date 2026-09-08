@@ -21,6 +21,17 @@ data class Settings(
      */
     val themeId: String = "copper",
 
+    /**
+     * Which lettering is installed, by its stable id.
+     *
+     * A second axis rather than more themes: a theme is the colours and a
+     * style is the shape of the letters, and all seven themes have to work
+     * under either. Stored as a string for the same reason [themeId] is —
+     * this module knows nothing about :core:design, and an id it does not
+     * recognise is the design module's problem to fall back on.
+     */
+    val uiStyleId: String = "retro",
+
     val use24Hour: Boolean = true,
     val weekStart: DayOfWeek = DayOfWeek.MONDAY,
     val homeZoneId: String? = null,

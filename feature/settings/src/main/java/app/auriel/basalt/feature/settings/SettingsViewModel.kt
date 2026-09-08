@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import app.auriel.basalt.core.data.BasaltGraph
 import app.auriel.basalt.core.data.model.Settings
 import app.auriel.basalt.core.data.repository.SettingsRepository
+import app.auriel.basalt.core.design.BasaltStyleId
+import app.auriel.basalt.core.design.BasaltStyles
 import app.auriel.basalt.core.design.BasaltThemeId
 import app.auriel.basalt.core.design.BasaltThemes
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,7 +37,18 @@ class SettingsViewModel(
             initialValue = BasaltThemes.lastKnown,
         )
 
+    /** The installed lettering, resolved from the stored id. */
+    val uiStyle: StateFlow<BasaltStyleId> = settings
+        .map { BasaltStyles.byId(it.uiStyleId) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = BasaltStyles.lastKnown,
+        )
+
     fun setTheme(theme: BasaltThemeId) = edit { it.copy(themeId = theme.id) }
+
+    fun setUiStyle(style: BasaltStyleId) = edit { it.copy(uiStyleId = style.id) }
 
     fun set24Hour(value: Boolean) = edit { it.copy(use24Hour = value) }
     fun setShowSeconds(value: Boolean) = edit { it.copy(showSeconds = value) }

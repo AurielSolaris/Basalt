@@ -1,44 +1,51 @@
-    plugins {
-        alias(libs.plugins.android.library)
-        alias(libs.plugins.kotlin.android)
-        alias(libs.plugins.kotlin.compose)
+plugins {
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+}
+
+android {
+    namespace = "app.auriel.basalt.widget"
+    compileSdk = 36
+
+    defaultConfig {
+        minSdk = 29
     }
 
-    android {
-        namespace = "app.auriel.basalt.widget"
-        compileSdk = 36
-
-        defaultConfig {
-            minSdk = 29
-        }
-
-        compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-        }
-        kotlinOptions {
-            jvmTarget = "17"
-        }
-        buildFeatures {
-            compose = true
-        }
-        testOptions {
-            unitTests.isReturnDefaultValues = true
-        }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
-
-    dependencies {
-        implementation(platform(libs.androidx.compose.bom))
-        implementation(libs.androidx.compose.foundation)
-        implementation(libs.androidx.compose.ui)
-        implementation(libs.androidx.compose.ui.graphics)
-        implementation(libs.androidx.core.ktx)
-        implementation(libs.kotlinx.coroutines.android)
-        implementation(project(":core:design"))
-implementation(project(":core:time"))
-implementation(project(":core:data"))
-implementation(libs.androidx.glance.appwidget)
-
-        testImplementation(libs.junit)
+    kotlinOptions {
+        jvmTarget = "17"
     }
+    buildFeatures {
+        compose = true
+    }
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+}
+
+dependencies {
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.glance.appwidget)
+
+    implementation(project(":core:design"))
+    implementation(project(":core:dotmatrix"))
+    implementation(project(":core:time"))
+    implementation(project(":core:data"))
+
+    // For AlarmTransitions only. A widget that worked out "when does this
+    // alarm next ring" for itself would be a second implementation of the
+    // one piece of logic in this app that must not have two.
+    implementation(project(":feature:alarm"))
+
+    testImplementation(libs.junit)
+}
 

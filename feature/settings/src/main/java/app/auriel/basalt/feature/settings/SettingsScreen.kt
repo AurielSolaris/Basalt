@@ -29,8 +29,9 @@ import app.auriel.basalt.core.design.InlineStepper
 import app.auriel.basalt.core.design.LocalBasaltColors
 import app.auriel.basalt.core.design.SectionHeader
 import app.auriel.basalt.core.design.SettingRow
+import app.auriel.basalt.core.design.StylePicker
 import app.auriel.basalt.core.design.ThemePicker
-import app.auriel.basalt.core.dotmatrix.DotMatrixText
+import app.auriel.basalt.core.design.BasaltText
 import app.auriel.basalt.core.dotmatrix.DotShape
 
 /**
@@ -47,6 +48,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
     val colors = LocalBasaltColors.current
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val theme by viewModel.theme.collectAsStateWithLifecycle()
+    val uiStyle by viewModel.uiStyle.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     // These are granted in the *system* settings app, so the only reliable
@@ -73,6 +75,18 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
         ThemePicker(
             selected = theme,
             onSelect = viewModel::setTheme,
+            modifier = Modifier.padding(vertical = 4.dp),
+        )
+
+        // Lettering is its own section rather than a row inside THEME. The
+        // two are independent — every style works under every palette — and
+        // burying a second picker under a heading that names the first is
+        // how a setting stops being findable.
+        SectionHeader("STYLE")
+
+        StylePicker(
+            selected = uiStyle,
+            onSelect = viewModel::setUiStyle,
             modifier = Modifier.padding(vertical = 4.dp),
         )
 
@@ -151,7 +165,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
         SectionHeader("SYSTEM")
 
         if (!access.allClear) {
-            DotMatrixText(
+            BasaltText(
                 text = "ALARMS MAY NOT RING",
                 cellSize = 1.5f,
                 shape = DotShape.Chunky,
@@ -187,7 +201,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
             BasaltButton(label = "OPEN", onClick = { openAppSettings(context) }, cellSize = 1.4f)
         }
 
-        DotMatrixText(
+        BasaltText(
             text = "SOME MAKERS ADD THEIR OWN SLEEP RULES ON TOP OF",
             cellSize = 1.1f,
             shape = DotShape.Chunky,
@@ -195,7 +209,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
             unlitColor = Color.Transparent,
             modifier = Modifier.padding(top = 10.dp),
         )
-        DotMatrixText(
+        BasaltText(
             text = "ANDROIDS. BASALT CANNOT TURN THOSE OFF ITSELF.",
             cellSize = 1.1f,
             shape = DotShape.Chunky,
@@ -222,7 +236,7 @@ private fun AccessRow(
     val colors = LocalBasaltColors.current
     SettingRow(label = label, caption = caption) {
         if (granted) {
-            DotMatrixText(
+            BasaltText(
                 text = "OK",
                 cellSize = 1.8f,
                 shape = DotShape.Chunky,

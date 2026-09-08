@@ -38,14 +38,14 @@ fun DotMatrixText(
             .dotMatrixSize(columns, rows, cell)
             .semantics { this.contentDescription = contentDescription },
     ) {
-        drawDotMatrix(
+        drawDotGrid(
             columns = columns,
             rows = rows,
             cellPx = cell.toPx(),
             litColor = litColor,
             unlitColor = unlitColor,
             shape = shape,
-            fill = 0.78f,
+            fill = DotFill,
             isLit = lookup::isLit,
         )
     }

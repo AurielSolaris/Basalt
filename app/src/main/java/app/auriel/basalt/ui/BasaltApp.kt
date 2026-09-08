@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
@@ -32,17 +33,25 @@ import app.auriel.basalt.feature.timer.TimerScreen
  * Scaffold here because there is no Material here.
  */
 @Composable
-fun BasaltApp() {
+fun BasaltApp(startRoute: String? = null) {
     val graph = rememberGraph()
     BasaltThemeHost(
         themeIdFlow = graph.themeIds,
         initialThemeId = graph.cachedThemeId,
+        styleIdFlow = graph.uiStyleIds,
+        initialStyleId = graph.cachedUiStyleId,
     ) {
         val colors = LocalBasaltColors.current
+        // A widget names the section it is a widget for; anything else — an
+        // unknown route, a launcher tap — opens where the app always opens.
+        val openingRoute = remember(startRoute) {
+            BasaltDestination.entries.firstOrNull { it.route == startRoute }?.route
+                ?: BasaltDestination.Start.route
+        }
         val navController = rememberNavController()
         val backStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = backStackEntry?.destination?.route
-            ?: BasaltDestination.Start.route
+            ?: openingRoute
 
         /**
          * Switches top-level section.
@@ -64,11 +73,15 @@ fun BasaltApp() {
         fun go(destination: BasaltDestination) {
             val current = navController.currentDestination?.route
             if (destination.route == current) return
-            if (destination == BasaltDestination.Start) {
-                navController.popBackStack(BasaltDestination.Start.route, inclusive = false)
+            // The root is whatever the app opened on, which a widget tap can
+            // change. Popping to a route that is not on the stack does
+            // nothing at all, so this has to follow the start destination
+            // rather than assume Clock.
+            if (destination.route == openingRoute) {
+                navController.popBackStack(openingRoute, inclusive = false)
             } else {
                 navController.navigate(destination.route) {
-                    popUpTo(BasaltDestination.Start.route) { inclusive = false }
+                    popUpTo(openingRoute) { inclusive = false }
                     launchSingleTop = true
                 }
             }
@@ -88,7 +101,7 @@ fun BasaltApp() {
             Box(modifier = Modifier.weight(1f)) {
                 NavHost(
                     navController = navController,
-                    startDestination = BasaltDestination.Start.route,
+                    startDestination = openingRoute,
                 ) {
                     composable(BasaltDestination.Alarm.route) {
                         AlarmScreen(

@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import app.auriel.basalt.core.dotmatrix.DotMatrixText
 import app.auriel.basalt.core.dotmatrix.DotShape
 
 /** An engraved section heading with a rule under it. */
@@ -29,7 +28,7 @@ fun SectionHeader(title: String, modifier: Modifier = Modifier) {
             .padding(top = 18.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        DotMatrixText(
+        BasaltText(
             text = title,
             cellSize = 1.5f,
             shape = DotShape.Chunky,
@@ -70,7 +69,7 @@ fun SettingRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            DotMatrixText(
+            BasaltText(
                 text = label,
                 cellSize = 1.6f,
                 shape = DotShape.Chunky,
@@ -78,7 +77,7 @@ fun SettingRow(
                 unlitColor = Color.Transparent,
             )
             caption?.let {
-                DotMatrixText(
+                BasaltText(
                     text = it,
                     cellSize = 1.2f,
                     shape = DotShape.Chunky,
@@ -112,7 +111,7 @@ fun InlineStepper(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         StepChip(text = "-", onClick = onDown, clickLabel = label?.let { "Decrease $it" })
-        DotMatrixText(
+        BasaltText(
             text = value,
             cellSize = 1.9f,
             shape = DotShape.Chunky,
@@ -133,7 +132,7 @@ private fun StepChip(text: String, onClick: () -> Unit, clickLabel: String?) {
             .clickable(role = Role.Button, onClickLabel = clickLabel, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        DotMatrixText(
+        BasaltText(
             text = text,
             cellSize = 2.2f,
             shape = DotShape.Chunky,
@@ -165,7 +164,7 @@ fun WeekdayChips(
                     .clickable(role = Role.Checkbox, onClick = { onToggle(day) }),
                 contentAlignment = Alignment.Center,
             ) {
-                DotMatrixText(
+                BasaltText(
                     text = initial,
                     cellSize = 1.8f,
                     shape = DotShape.Chunky,

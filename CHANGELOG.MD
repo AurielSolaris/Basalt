@@ -9,12 +9,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 
-- Widgets — the reason the project exists. A modular renderer where a new
-  style is a new configuration, not a rewrite
 - The 7×13 hero glyph set and the 3×5 micro set
 - World clock board (the city dataset exists; the UI does not)
 - Bedtime wind-down notifications
 - Overnight Doze soak testing across devices and OEM skins
+- Vintage metrics on device across densities — EB Garamond's fitting is
+  exercised by eye rather than by test, because a JVM unit test cannot load an
+  `android.graphics.Typeface`
+
+## [0.3.0] — 2026-09-09
+
+Widgets, and a second way to letter the app.
+
+### Added
+
+- **Ten widgets**, added from the launcher's own picker:
+  - **Analog** — etched dial and needle hands
+  - **Digital** — time, date beneath, next alarm below that
+  - **Dual** — home and away side by side, each tinted for its own daylight
+  - **Next alarm** — one engraved line: when it rings, and its label
+  - **Quick look** — time, date, next alarm and anything running, on one line
+  - **Solar** — a day arc with the current hour marked
+  - **Stacked** — hours over minutes, filling a square
+  - **Stopwatch** — arc gauge and elapsed time, with start and lap *in* the
+    widget
+  - **Timers** — every timer with its remaining time, soonest first
+  - **World** — the chosen cities as a board, each tinted for its own daylight
+
+  All ten are one implementation. A widget is a row in `BasaltWidget` — sizes,
+  what data it reads, how often it redraws, where a tap goes — plus a face
+  function; there is no per-widget layout code anywhere in the module. Adding
+  an eleventh does not add a provider, a layout or an update path.
+- **A second UI style.** Colour and lettering are now two axes: a theme is the
+  palette, a style is the shape of the letters, and all seven themes work under
+  both. Chosen in **Settings → STYLE**:
+  - **Retro** — the hand-authored 5×7 dot matrix. Still the default; an upgrade
+    does not re-letter anyone's home screen
+  - **Vintage** — EB Garamond, an old-style serif. Chosen over the obvious
+    alternatives because a clock has to hold both ends of the size range, and
+    its larger optical sizes stay readable at a city-name's twelve points as
+    well as at a hero readout's two hundred
+
+  The style applies to the app *and* the widgets, because a home screen that
+  disagrees with the app it belongs to is the thing widgets are supposed to fix.
+- `BasaltTypeface` — the seam that made a second style possible without a
+  second renderer. Measurement plus drawing, expressed in *cells* rather than
+  points even for the style with no grid, so a line box is seven cells tall
+  under both and every layout fitted for one fits the other
+- `BasaltText` — the front door for every string the app draws, taking the same
+  arguments `DotMatrixText` took and meaning the same things by them
+- `StylePicker` — sets each row *in the style it offers*, since a style picker
+  is the one list in the app where the label and the sample can be the same
+  object. "EB GARAMOND" written in dots would tell the user nothing
+- `Settings.uiStyleId`, mirrored to SharedPreferences alongside the theme id,
+  so the alarm screen and the window background start in the right lettering
+  rather than spending a frame in the wrong one
+- Widget previews are the real renderer fed a fixed snapshot, so a preview is
+  wrong only when the widget is
+
+### Changed
+
+- `FaceRenderer` and every call site now measure through `BasaltTypeface`
+  instead of a fixed `DotMatrixFont`
+- All 52 text call sites across the app moved from `DotMatrixText` to
+  `BasaltText`. `DotMatrixText` remains as the Retro primitive
+- `BasaltThemeHost` installs the UI style alongside the palette rather than
+  needing a second provider nested inside it
+
+### Removed
+
+- `WidgetGeometry` — its fitting rules moved into `BasaltTypeface`, where both
+  styles can share them instead of one style owning them
+
+### Notes
+
+- EB Garamond is bundled under the SIL Open Font License 1.1; see
+  [`NOTICES.MD`](NOTICES.MD)
+- The widget catalogue is **not** derived from AOSP DeskClock, which ships two
+  widgets in Android 16 exactly as it did in Android 10. It is the union of the
+  widget ideas published by Google Clock, Samsung Clock and Nothing OS,
+  deduplicated; each entry records its origin
 
 ## [0.2.0] — 2026-08-26
 

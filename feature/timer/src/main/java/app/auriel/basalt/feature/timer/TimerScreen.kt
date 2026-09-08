@@ -22,7 +22,7 @@ import app.auriel.basalt.core.design.BasaltButton
 import app.auriel.basalt.core.design.BasaltStepper
 import app.auriel.basalt.core.design.BezelPanel
 import app.auriel.basalt.core.design.LocalBasaltColors
-import app.auriel.basalt.core.dotmatrix.DotMatrixText
+import app.auriel.basalt.core.design.BasaltText
 import app.auriel.basalt.core.dotmatrix.DotShape
 import app.auriel.basalt.core.time.DurationFormat
 
@@ -69,7 +69,7 @@ fun TimerScreen(
         }
 
         if (state.rows.isEmpty()) {
-            DotMatrixText(
+            BasaltText(
                 text = "NO TIMERS",
                 cellSize = 2f,
                 shape = DotShape.Chunky,
@@ -111,7 +111,7 @@ private fun DurationSetter(
             Triple("SEC", seconds % 60, 1),
         ).forEachIndexed { index, (label, value, step) ->
             if (index > 0) {
-                DotMatrixText(
+                BasaltText(
                     text = ":",
                     cellSize = 3.4f,
                     litColor = colors.bronze,
@@ -122,14 +122,14 @@ private fun DurationSetter(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                DotMatrixText(
+                BasaltText(
                     text = label,
                     cellSize = 1.3f,
                     shape = DotShape.Chunky,
                     litColor = colors.pewter,
                     unlitColor = Color.Transparent,
                 )
-                DotMatrixText(
+                BasaltText(
                     text = value.toString().padStart(2, '0'),
                     cellSize = 3.4f,
                     litColor = colors.copper,
@@ -173,13 +173,13 @@ private fun TimerCard(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            DotMatrixText(
+            BasaltText(
                 text = DurationFormat.coarse(row.remainingMillis),
                 cellSize = 5f,
                 litColor = readoutColor,
                 unlitColor = colors.unlit,
             )
-            DotMatrixText(
+            BasaltText(
                 text = "OF " + DurationFormat.coarse(row.timer.totalMillis),
                 cellSize = 1.3f,
                 shape = DotShape.Chunky,

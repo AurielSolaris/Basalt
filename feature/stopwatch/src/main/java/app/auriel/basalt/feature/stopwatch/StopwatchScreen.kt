@@ -21,7 +21,7 @@ import app.auriel.basalt.core.data.model.Lap
 import app.auriel.basalt.core.design.BasaltButton
 import app.auriel.basalt.core.design.BasaltGauge
 import app.auriel.basalt.core.design.LocalBasaltColors
-import app.auriel.basalt.core.dotmatrix.DotMatrixText
+import app.auriel.basalt.core.design.BasaltText
 import app.auriel.basalt.core.dotmatrix.DotShape
 import app.auriel.basalt.core.time.DurationFormat
 
@@ -57,7 +57,7 @@ fun StopwatchScreen(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(top = 16.dp),
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                DotMatrixText(
+                BasaltText(
                     text = DurationFormat.precise(state.elapsedMillis),
                     cellSize = 3f,
                     litColor = if (state.running) colors.copper else colors.silver,
@@ -88,7 +88,7 @@ fun StopwatchScreen(modifier: Modifier = Modifier) {
         }
 
         if (state.laps.isEmpty()) {
-            DotMatrixText(
+            BasaltText(
                 text = "NO LAPS",
                 cellSize = 1.6f,
                 shape = DotShape.Chunky,
@@ -117,7 +117,7 @@ private fun LapRow(lap: Lap) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        DotMatrixText(
+        BasaltText(
             text = lap.number.toString().padStart(2, '0'),
             cellSize = 1.6f,
             shape = DotShape.Chunky,
@@ -126,14 +126,14 @@ private fun LapRow(lap: Lap) {
             contentDescription = "Lap ${lap.number}",
         )
         // The split is what a lap is for, so it gets the copper.
-        DotMatrixText(
+        BasaltText(
             text = DurationFormat.precise(lap.lapMillis),
             cellSize = 1.9f,
             shape = DotShape.Chunky,
             litColor = colors.copper,
             unlitColor = Color.Transparent,
         )
-        DotMatrixText(
+        BasaltText(
             text = DurationFormat.precise(lap.totalMillis),
             cellSize = 1.6f,
             shape = DotShape.Chunky,

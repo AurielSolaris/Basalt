@@ -73,7 +73,19 @@ object BasaltGraph {
          */
         val cachedThemeId: String? get() = preferences.cachedThemeId
 
+        /**
+         * The stored UI style id, available without suspending.
+         *
+         * The lettering has the same first-frame problem the palette does,
+         * and for the same callers. See [BasaltPreferences.cachedUiStyleId].
+         */
+        val cachedUiStyleId: String? get() = preferences.cachedUiStyleId
+
         /** Just the theme id, for the theme host. */
         val themeIds: Flow<String> = settings.settings.map { it.themeId }.distinctUntilChanged()
+
+        /** Just the UI style id, for the theme host. */
+        val uiStyleIds: Flow<String> =
+            settings.settings.map { it.uiStyleId }.distinctUntilChanged()
     }
 }

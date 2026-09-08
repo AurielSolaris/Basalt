@@ -186,9 +186,43 @@ Copper means *energised* — a running timer, an armed alarm, the selected tab.
 Silver means *structural* — chrome, labels, information at rest. Never copper for
 a plain label; never silver for a running state.
 
+### UI styles
+
+Colour and lettering are **two axes, not one**. A theme answers *what colour is
+this app*; a style answers *what shape are its letters*. All seven themes work
+under both styles, which is why they are not fourteen themes and a picker
+nobody could read.
+
+| Style | Lettering | Chosen in |
+|---|---|---|
+| **Retro** *(default)* | Hand-authored 5×7 dot matrix | Settings → STYLE |
+| **Vintage** | EB Garamond, an old-style serif | Settings → STYLE |
+
+The dot matrix turned out to be load-bearing for some people and a dealbreaker
+for others, which is a reasonable thing to disagree about — a clock is
+something you look at more often than almost anything else on the device.
+Vintage is for the readers who wanted the chrome without the pixels.
+
+Both styles are drawn through one interface, `BasaltTypeface`, which answers
+five questions: how wide a string is, how tall a line is, the largest size that
+fits a box, where to stop truncating, and how to paint it. Two consequences
+follow, and both were the point:
+
+- **Everything is measured in cells, not points** — even for the style with no
+  grid. A line box is seven cells tall under both, so a layout that fitted
+  under Retro still fits under Vintage. The fitting rules are written once.
+- **The app and its widgets draw through the same code.** Vintage could have
+  been a `BasicText` with a `FontFamily` in about a tenth of the lines, but a
+  widget is `RemoteViews` and cannot host one — so that would have been a
+  *second* implementation of Vintage, agreeing with the first right up until it
+  didn't. Both paths rasterise through a `DrawScope` instead.
+
+Since the canvas is not a text node, every run carries a plain-text
+`contentDescription` under both styles. The lettering is a look, not a barrier.
+
 ### Dot matrix
 
-Glyphs are authored by hand, not shipped as a font: the renderer needs cell
+The **Retro** style. Glyphs are authored by hand, not shipped as a font: the renderer needs cell
 coordinates, not outlines, so individual dots can be coloured and animated. A
 glyph is written as an ASCII picture and folded to bitmasks once, at class-init:
 
@@ -229,7 +263,8 @@ a barrier.
 
 ```
 :app                 nav host, theme install, manifest
-:core:design         palettes + theme host, BezelPanel, controls, icons, motion
+:core:design         palettes + UI styles, theme host, BasaltText, BasaltTypeface,
+                     BezelPanel, controls, icons, motion
 :core:dotmatrix      Glyph, DotMatrixFont, DotMatrix / DotMatrixText renderers
 :core:time           TimeSource, Weekdays, duration + clock formatting
 :core:data           Room, DataStore, domain models, repositories, the graph
@@ -240,7 +275,7 @@ a barrier.
 :feature:stopwatch   stopwatch + laps
 :feature:bedtime     sleep window
 :feature:settings    settings surface
-:widget              Glance widgets
+:widget              widget catalogue, faces, one renderer, one update pass
 ```
 
 Some load-bearing decisions:
@@ -280,6 +315,22 @@ Some load-bearing decisions:
   not: `AlarmTransitions` is pure, so "what happens to a repeating alarm once
   this morning is over" can be tested without a device — which is also the part
   that is entangled enough to get wrong.
+- **A widget is a configuration, not a new widget.** Ten entries in
+  `BasaltWidget`, and one Glance class, one renderer and one update pass behind
+  them. Adding an eleventh means a row in the enum and a `build` branch that
+  returns a `WidgetFace`; it does not mean a provider, a layout or an update
+  path. The manifest is the one place the catalogue cannot stay a list, because
+  the package installer reads it long before any Basalt code runs.
+- **One update pass for every widget on the screen.** A home screen with six
+  Basalt widgets wakes the device once a minute, not six times, and reads the
+  database once between them — a face declares what data it needs and the pass
+  unions those, so a lone analog clock never opens the timer table. Nothing
+  redraws faster than once a minute unless something the user can *watch* is
+  moving, and never while the screen is off.
+- **Lettering is behind a typeface, not behind a text style.** `BasaltTypeface`
+  measures and draws; everything above it lays out in cells. That is what let a
+  second UI style land without re-measuring fifty-odd readouts or writing the
+  widget renderer twice.
 - **Room's destructive fallback is gone.** The schema is exported and
   committed, and a change with no matching migration now throws on open instead
   of quietly deleting the user's alarms. A crash is a bug report; a wiped alarm
@@ -413,18 +464,28 @@ constant — see [Themes](#themes) for what each one reads as.
 Still to come under this heading: the 7×13 hero glyph set, the 3×5 micro set,
 per-cell digit animation, textures and custom clock faces.
 
-### v0.3.0 — Widgets
+### v0.3.0 — Widgets and a second UI style *(done)*
 
 The actual reason this project exists. Widgets are badly underused: most apps
-ship one big clock and stop. The goal here is to treat widgets as a **design
-system** — a modular renderer where a new style is a new configuration, not a
-rewrite.
+ship one big clock and stop. The goal was to treat widgets as a **design
+system** — a modular renderer where a new widget is a new configuration, not a
+rewrite — and that is what shipped.
 
-Planned: digital readout, brass analog, world board, next-alarm plate, timer
-bank, stopwatch gauge, bedtime gauge, countdown-to-date, sun dial, compact
-stack — across small, medium, large and ultra-wide.
+**Ten widgets:** analog, digital, dual, next alarm, quick look, solar, stacked,
+stopwatch, timers, world. Each is a row in `BasaltWidget` plus a face function;
+all ten share one Glance class, one renderer and one update pass. Every face
+measures itself into whatever box the launcher gives it, so there are no
+small/medium/large variants to maintain — a widget is resizable and correct at
+any cell count its catalogue entry allows.
 
-Optional extras (weather, location) will be exactly that: **optional**, and
+The stopwatch face carries its own start and lap buttons, drawn into the
+bitmap with transparent touch targets laid over them, so the look is ours and
+the touch handling is the framework's.
+
+**A second UI style:** Vintage (EB Garamond) alongside Retro (the dot matrix),
+chosen in Settings → STYLE and applying to the app *and* the home screen.
+
+Optional extras (weather, location) remain exactly that: **optional**, and
 toggleable from Settings. Nothing reaches the network unless it is switched on.
 
 ### v1.0.0 — Release
